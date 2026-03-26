@@ -125,7 +125,7 @@ class _MainScreenState extends State<MainScreen> {
               builder = (context) => const SelectVegScreen();
               break;
             default:
-            // Fallback to home for any unknown route (including '/')
+            // Fallback to home for any unknown route (including '/')add
               builder = (context) => HomeScreen(
                 onNavigate: _onNavBarTap,
                 onPushRoute: _pushRoute,
