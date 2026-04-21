@@ -7,8 +7,20 @@ import 'screens/knowledge/knowledge_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/select_Veg/select_veg_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; 
 
-void main() {
+
+Future<void> main() async {
+  // Flutter engine 
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // .env file 
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    print("Error loading .env file: $e");
+  }
+
   runApp(const MyApp());
 }
 
@@ -29,7 +41,7 @@ class MyApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-      home: const MainScreen(), // No routes defined here – we use a nested Navigator
+      home: const MainScreen(),
     );
   }
 }
@@ -95,12 +107,12 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: Navigator(
         key: _navigatorKey,
-        initialRoute: '/home', // Start at home
+        initialRoute: '/home', 
         onGenerateRoute: (settings) {
           WidgetBuilder builder;
           switch (settings.name) {
             case '/':
-            case '/home': // Treat '/' as home too
+            case '/home': 
               builder = (context) => HomeScreen(
                 onNavigate: _onNavBarTap,
                 onPushRoute: _pushRoute,
@@ -125,7 +137,6 @@ class _MainScreenState extends State<MainScreen> {
               builder = (context) => const SelectVegScreen();
               break;
             default:
-            // Fallback to home for any unknown route (including '/')
               builder = (context) => HomeScreen(
                 onNavigate: _onNavBarTap,
                 onPushRoute: _pushRoute,
