@@ -1,125 +1,186 @@
 import 'package:flutter/material.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String selectedLang = "si"; 
+
+  final Map<String, Map<String, String>> localizedText = {
+    'en': {
+      'title': 'Profile',
+      'account': 'Account',
+      'manage': 'Manage Profile',
+      'notif': 'Notifications',
+      'lang': 'Language',
+      'lang_name': 'English',
+      'pref': 'Preferences',
+      'about': 'About Us',
+      'theme': 'Theme',
+      'theme_mode': 'Light',
+      'support': 'Support',
+      'help': 'Help Center',
+    },
+    'si': {
+      'title': 'පැතිකඩ',
+      'account': 'ගිණුම',
+      'manage': 'පැතිකඩ කළමනාකරණය',
+      'notif': 'දැනුම්දීම්',
+      'lang': 'භාෂාව',
+      'lang_name': 'සිංහල',
+      'pref': 'මනාප',
+      'about': 'අපි ගැන',
+      'theme': 'තේමාව',
+      'theme_mode': 'ආලෝකය', 
+      'support': 'සහාය',
+      'help': 'උදවු මධ්‍යස්ථානය',
+    },
+    'ta': {
+      'title': 'சுயவிவரம்',
+      'account': 'கணக்கு',
+      'manage': 'சுயவிவரத்தை நிர்வகி',
+      'notif': 'அறிவிப்புகள்',
+      'lang': 'மொழி',
+      'lang_name': 'தமிழ்',
+      'pref': 'விருப்பத்தேர்வுகள்',
+      'about': 'எங்களைப் பற்றி',
+      'theme': 'தீம்',
+      'theme_mode': 'ஒளி', 
+      'support': 'ஆதரவு',
+      'help': 'உதவி மையம்',
+    },
+  };
+
+  void changeLanguage(String langCode) {
+    setState(() {
+      selectedLang = langCode;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    var t = localizedText[selectedLang]!;
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('පැතිකඩ'),
+        title: Text(t['title']!, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile header
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.green[200],
-              child: const Icon(
-                Icons.person,
-                size: 50,
-                color: Colors.green,
+            // User Info Section
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 35,
+                    backgroundColor: Colors.green[100],
+                    child: const Icon(Icons.person, size: 40, color: Colors.green),
+                  ),
+                  const SizedBox(width: 15),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text("කමල් පෙරේරා", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text("kamal@gmail.com", style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 10),
-            const Text(
-              'කමල් පෙරේරා',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const Text(
-              'kamal@gmail.com',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
 
             // Account Section
-            const _SectionHeader(title: 'ගිණුම'),
-            _buildMenuItem(
-              icon: Icons.person,
-              title: 'පැතිකඩ කළමනාකරණය',
-              onTap: () {},
-            ),
-            _buildMenuItem(
-              icon: Icons.notifications,
-              title: 'දැනුම්දීම්',
-              onTap: () {},
-            ),
-            _buildMenuItem(
-              icon: Icons.language,
-              title: 'භාෂාව',
-              trailing: const Text('සිංහල'),
-              onTap: () {},
-            ),
+            Text(t['account']!, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
+            const SizedBox(height: 8),
+            _buildSectionBox([
+              _buildMenuItem(Icons.person_outline, t['manage']!),
+              _buildDivider(),
+              _buildMenuItem(Icons.notifications_none, t['notif']!),
+              _buildDivider(),
+              _buildMenuItem(Icons.language, t['lang']!, trailingText: t['lang_name']!, onTap: () {
+                _showLanguageDialog();
+              }),
+            ]),
 
-            const Divider(),
+            const SizedBox(height: 20),
+            Text(t['pref']!, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
+            const SizedBox(height: 8),
+            _buildSectionBox([
+              _buildMenuItem(Icons.info_outline, t['about']!),
+              _buildDivider(),
+              _buildMenuItem( Icons.palette_outlined, t['theme']!, trailingText: t['theme_mode']!),
+            ]),
 
-            // Preferences Section
-            const _SectionHeader(title: 'මනාප'),
-            _buildMenuItem(
-              icon: Icons.color_lens,
-              title: 'තේමාව',
-              trailing: const Text('ආලෝකය'),
-              onTap: () {},
-            ),
-            _buildMenuItem(
-              icon: Icons.info,
-              title: 'අපි ගැන',
-              onTap: () {},
-            ),
-
-            const Divider(),
-
-            // Support
-            const _SectionHeader(title: 'සහාය'),
-            _buildMenuItem(
-              icon: Icons.help,
-              title: 'උදවු මධ්‍යස්ථානය',
-              onTap: () {},
-            ),
+            const SizedBox(height: 20),
+            Text(t['support']!, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black54)),
+            const SizedBox(height: 8),
+            _buildSectionBox([
+              _buildMenuItem(Icons.help_outline, t['help']!),
+            ]),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    Widget? trailing,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.green),
-      title: Text(title),
-      trailing: trailing ?? const Icon(Icons.arrow_forward_ios),
-      onTap: onTap,
+  void _showLanguageDialog() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(title: const Text("English"), onTap: () { changeLanguage("en"); Navigator.pop(context); }),
+            ListTile(title: const Text("සිංහල"), onTap: () { changeLanguage("si"); Navigator.pop(context); }),
+            ListTile(title: const Text("தமிழ்"), onTap: () { changeLanguage("ta"); Navigator.pop(context); }),
+          ],
+        );
+      },
     );
   }
-}
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey,
-          ),
-        ),
+  Widget _buildSectionBox(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
       ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildDivider() => Divider(height: 1, indent: 50, endIndent: 10, color: Colors.grey[200]);
+
+  Widget _buildMenuItem(IconData icon, String title, {String? trailingText, VoidCallback? onTap}) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.green),
+      title: Text(title, style: const TextStyle(fontSize: 15)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (trailingText != null) Text(trailingText, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+          const SizedBox(width: 5),
+          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+        ],
+      ),
+      onTap: onTap,
     );
   }
 }
