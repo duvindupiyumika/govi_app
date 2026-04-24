@@ -12,11 +12,15 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            // 🔥 Dark mode එකේදී shadow එක ඕනෑවට වඩා තදට පේන්නේ නැති වෙන්න හැදුවා
+            color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, -3),
@@ -27,9 +31,10 @@ class BottomNavBar extends StatelessWidget {
         currentIndex: currentIndex,
         onTap: onTap,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        // 🔥 NavBar එකේ පසුබිම theme එක අනුව මාරු වේ (Gemini Dark Grey)
+        backgroundColor: theme.colorScheme.surface,
         selectedItemColor: const Color(0xFF2E7D32),
-        unselectedItemColor: Colors.grey[600],
+        unselectedItemColor: isDark ? Colors.white38 : Colors.grey[600],
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
         unselectedLabelStyle: const TextStyle(fontSize: 11),
         items: const [

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'screens/profile/theme_provider.dart'; // 🔥 Path එක Fix කළා
+import 'firebase_options.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/tracking/tracking_screen.dart';
 import 'screens/ai_suggestions/ai_suggestions_screen.dart';
@@ -7,21 +11,32 @@ import 'screens/knowledge/knowledge_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/select_Veg/select_veg_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; 
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
-  // Flutter engine 
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // .env file 
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print("Firebase Initialized Successfully! ✅");
+  } catch (e) {
+    print("Firebase Initialization Error: $e ❌");
+  }
+
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
     print("Error loading .env file: $e");
   }
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -29,18 +44,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       title: 'Smart Agriculture',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        fontFamily: 'Roboto',
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF2E7D32),
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-      ),
+      themeMode: themeProvider.themeMode,
+      theme: MyThemes.lightTheme,
+      darkTheme: MyThemes.darkTheme,
       home: const MainScreen(),
     );
   }
@@ -68,38 +79,22 @@ class _MainScreenState extends State<MainScreen> {
 
   void _onNavBarTap(int index) {
     if (_currentIndex == index) {
-      _safePopToRoot();
+      _navigatorKey.currentState?.popUntil((route) => route.isFirst);
     } else {
       setState(() {
         _currentIndex = index;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _safePushNamedAndRemoveUntil(_routeNames[index]!);
+        _navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          _routeNames[index]!,
+              (route) => false,
+        );
       });
     }
   }
 
-  void _safePopToRoot() {
-    final navigator = _navigatorKey.currentState;
-    if (navigator != null && navigator.context.mounted) {
-      navigator.popUntil((route) => route.isFirst);
-    }
-  }
-
-  void _safePushNamedAndRemoveUntil(String routeName) {
-    final navigator = _navigatorKey.currentState;
-    if (navigator != null && navigator.context.mounted) {
-      navigator.pushNamedAndRemoveUntil(routeName, (route) => false);
-    }
-  }
-
   void _pushRoute(String routeName) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final navigator = _navigatorKey.currentState;
-      if (navigator != null && navigator.context.mounted) {
-        navigator.pushNamed(routeName);
-      }
-    });
+    _navigatorKey.currentState?.pushNamed(routeName);
   }
 
   @override
@@ -107,12 +102,12 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: Navigator(
         key: _navigatorKey,
-        initialRoute: '/home', 
+        initialRoute: '/home',
         onGenerateRoute: (settings) {
           WidgetBuilder builder;
           switch (settings.name) {
             case '/':
-            case '/home': 
+            case '/home':
               builder = (context) => HomeScreen(
                 onNavigate: _onNavBarTap,
                 onPushRoute: _pushRoute,
