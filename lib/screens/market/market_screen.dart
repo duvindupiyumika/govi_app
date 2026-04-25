@@ -34,7 +34,7 @@ class _MarketScreenState extends State<MarketScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: 'යාවත්කාලීන කරන්න',
             onPressed: () => setState(() {}),
           ),
         ],
