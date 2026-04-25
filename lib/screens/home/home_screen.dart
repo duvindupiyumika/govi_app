@@ -21,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // නම Firebase එකෙන් ගන්න නිසා මේක Default එකක් විදිහට තියමු
   final String farmerName = "Kamal";
 
   final List<Map<String, String>> carouselItems = const [
@@ -159,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               floating: true,
               backgroundColor: Colors.transparent,
               elevation: 0,
+              toolbarHeight: 70,
               flexibleSpace: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 child: Row(
