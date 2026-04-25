@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "634869530305",
+    "project_id": "goviapp-d1185",
+    "storage_bucket": "goviapp-d1185.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:634869530305:android:4f2a1dfc76afce4199de40",
+        "android_client_info": {
+          "package_name": "com.example.govi_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYrvdS4vL6rqkk4QyzTt0I1z85N0vQ8j0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

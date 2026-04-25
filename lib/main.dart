@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/tracking/tracking_screen.dart';
 import 'screens/ai_suggestions/ai_suggestions_screen.dart';
@@ -13,6 +14,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 Future<void> main() async {
   // Flutter engine 
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp();
   
   // .env file 
   try {
