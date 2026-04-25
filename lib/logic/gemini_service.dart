@@ -1,43 +1,41 @@
+import 'dart:convert';
 import 'dart:typed_data';
-import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; 
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class GeminiService {
-   static final String _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-
-  final _model = GenerativeModel(
-    model: 'gemini-3-flash-preview', 
-    apiKey: _apiKey,
-  );
+  static final String _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
 
   Future<String> _getAiResponse(String prompt, {Uint8List? imageBytes}) async {
-    try {
-      final content = [
-        Content.multi([
-          TextPart(prompt),
-          if (imageBytes != null) DataPart('image/jpeg', imageBytes),
-        ])
-      ];
+    List<Map<String, String>> attempts = [
+      {'ver': 'v1beta', 'mod': 'gemini-1.5-flash'},
+      {'ver': 'v1', 'mod': 'gemini-pro'},
+    ];
 
-      final response = await _model.generateContent(content);
-      return response.text ?? "පිළිතුරක් ලබා ගැනීමට නොහැකි විය.";
-    } catch (e) {
-      return "දෝෂයකි: $e";
+    for (var attempt in attempts) {
+      final url = 'https://generativelanguage.googleapis.com/${attempt['ver']}/models/${attempt['mod']}:generateContent?key=$_apiKey';
+      try {
+        final List<Map<String, dynamic>> parts = [{"text": prompt}];
+        if (imageBytes != null) {
+          parts.add({"inline_data": {"mime_type": "image/jpeg", "data": base64Encode(imageBytes)}});
+        }
+        final response = await http.post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({"contents": [{"parts": parts}]}),
+        ).timeout(const Duration(seconds: 20));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          return data['candidates'][0]['content']['parts'][0]['text'];
+        }
+      } catch (e) { continue; }
     }
+    return "දෝෂයකි: සම්බන්ධතාවය බිඳ වැටුණි.";
   }
 
-  Future<String> getCropRecommendation(String location, String ph, String temp) async {
-    return _getAiResponse("මම ඉන්නේ $location ප්‍රදේශයේ. පසෙහි pH අගය $ph සහ උෂ්ණත්වය $temp වේ. මෙහි වගා කිරීමට වඩාත්ම සුදුසු බෝග 3ක් සහ හේතු සිංහලෙන් පවසන්න.");
-  }
-
-  Future<String> getFertilizerAdvice(String crop, String age) async {
-    return _getAiResponse("මගේ $crop වගාවට දැන් වයස සති $age කි. මෙයට දැන් යෙදිය යුතු හොඳම පොහොර සහ ප්‍රමාණය සිංහලෙන් පවසන්න.");
-  }
-
-  Future<String> identifyDisease(Uint8List imageBytes) async {
-    return _getAiResponse(
-      "මෙම පින්තූරයේ ඇති ශාක රෝගය කුමක්ද? එයට ගත යුතු පිළියම් මොනවාද? කරුණාකර සිංහලෙන් පැහැදිලි කරන්න.",
-      imageBytes: imageBytes,
-    );
-  }
+  Future<String> sendChatMessage(String message) async => _getAiResponse(message);
+  Future<String> identifyDisease(Uint8List img) async => _getAiResponse("මෙම පින්තූරයේ ඇති ශාක රෝගය කුමක්ද? කරුණාකර සිංහලෙන් පවසන්න.", imageBytes: img);
+  Future<String> getCropRecommendation(String l, String p, String t) async => _getAiResponse("මම ඉන්නේ $l හි. pH අගය $p සහ උෂ්ණත්වය $t වේ. සුදුසු බෝග 3ක් සිංහලෙන් පවසන්න.");
+  Future<String> getFertilizerAdvice(String c, String a) async => _getAiResponse("$c වගාවේ සති $a ට සුදුසු පොහොර සිංහලෙන් පවසන්න.");
 }
