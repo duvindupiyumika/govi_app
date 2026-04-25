@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1019433110549",
+    "project_id": "govi-final-v3",
+    "storage_bucket": "govi-final-v3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1019433110549:android:123a567b0cf355786c921c",
+        "android_client_info": {
+          "package_name": "com.example.govi_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNuBFVTE-TU8GzOugxsMduOtP1kMddxzc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
