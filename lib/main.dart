@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'screens/profile/theme_provider.dart'; // 🔥 Path එක Fix කළා
+import 'screens/profile/theme_provider.dart'; 
 import 'firebase_options.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/tracking/tracking_screen.dart';
