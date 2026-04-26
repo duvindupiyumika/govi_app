@@ -19,8 +19,15 @@ class MarketPrice {
     required this.updatedAt,
   });
 
-  factory MarketPrice.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory MarketPrice.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final Map<String, dynamic>? data = doc.data();
+    if (data == null) {
+      throw StateError(
+        'MarketPrice document "${doc.id}" does not exist or has no data.',
+      );
+    }
     return MarketPrice(
       id: doc.id,
       vegetableName: data['vegetableName'] ?? '',
