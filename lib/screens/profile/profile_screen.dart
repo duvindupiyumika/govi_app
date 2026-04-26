@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'manage_profile_screen.dart';
 import 'notification_screen.dart';
 import 'theme_provider.dart';
-import 'help_center_screen.dart'; // 🔥 Help Center එක Import කළා
+import 'help_center_screen.dart'; 
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -188,7 +188,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(t['support']!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 8),
             _buildSectionBox([
-              // 🔥 Help Center එකට Navigate වෙන කොටස
               _buildMenuItem(
                 Icons.help_outline,
                 t['help']!,
