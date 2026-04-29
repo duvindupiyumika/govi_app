@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Govi App - Market Price Admin</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #0f1923;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #1b5e20, #2e7d32, #43a047);
+      padding: 20px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .header h1 { color: white; font-size: 24px; }
+    .header .status {
+      background: rgba(255,255,255,0.15);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #a5d6a7;
+    }
+    .header .status.connected { color: #69f0ae; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+    .card {
+      background: #1a2332;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 1px solid #263545;
+    }
+    .card h2 {
+      color: #66bb6a;
+      margin-bottom: 16px;
+      font-size: 18px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .form-group {
+      flex: 1;
+      min-width: 180px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: #90a4ae;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0d1520;
+      border: 1px solid #37474f;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus, select:focus {
+      border-color: #66bb6a;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, #2e7d32, #43a047);
+      color: white;
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(46,125,50,0.4); }
+    .btn-seed {
+      background: linear-gradient(135deg, #e65100, #ff6d00);
+      color: white;
+    }
+    .btn-seed:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(230,81,0,0.4); }
+    .btn-danger {
+      background: #c62828;
+      color: white;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .log {
+      background: #0d1520;
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .log-entry { padding: 2px 0; }
+    .log-success { color: #69f0ae; }
+    .log-error { color: #ef5350; }
+    .log-info { color: #42a5f5; }
+
+    .price-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    .price-table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: #0d1520;
+      color: #90a4ae;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .price-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #1e2d3d;
+      font-size: 14px;
+    }
+    .price-table tr:hover td { background: rgba(102,187,106,0.05); }
+    .price-badge {
+      background: rgba(102,187,106,0.15);
+      color: #69f0ae;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 8px 16px;
+      background: #1a2332;
+      border: 1px solid #263545;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .tab:hover { border-color: #66bb6a; }
+    .tab.active {
+      background: #2e7d32;
+      border-color: #2e7d32;
+      color: white;
+    }
+    .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌿 Govi Market Admin</h1>
+  <div class="status" id="fbStatus">⏳ Connecting...</div>
+</div>
+
+<div class="container">
+
+  <!-- Seed Data -->
+  <div class="card">
+    <h2>🚀 Quick Seed — Populate All Markets</h2>
+    <p style="color:#78909c; margin-bottom:16px; font-size:14px;">
+      This will add 16 vegetables across all 10 markets with realistic price variations.
+    </p>
+    <button class="btn btn-seed" id="seedBtn" onclick="seedAllData()">
+      ⚡ Seed All Market Data
+    </button>
+  </div>
+
+  <!-- Add Single Price -->
+  <div class="card">
+    <h2>➕ Add / Update Price</h2>
+    <form id="addForm" onsubmit="addPrice(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Market (වෙළඳපොළ)</label>
+          <select id="marketSelect">
+            <option>දඹුල්ල</option>
+            <option>පැල්ල</option>
+            <option>මීගොඩ</option>
+            <option>රත්මලාන</option>
+            <option>බෝකුන්දර</option>
+            <option>නාරහෙන්පිට</option>
+            <option>තිස්ස</option>
+            <option>වේයන්ගොඩ</option>
+            <option>කැප්පෙටිපොල</option>
+            <option>තඹුත්තේගම</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vegetable Name (සිංහල)</label>
+          <input type="text" id="vegNameSi" placeholder="e.g. වම්බටු" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vegetable Name (English)</label>
+          <input type="text" id="vegNameEn" placeholder="e.g. Brinjal" required>
+        </div>
+        <div class="form-group">
+          <label>Price (LKR per kg)</label>
+          <input type="number" id="vegPrice" placeholder="e.g. 120" required>
+        </div>
+        <div class="form-group">
+          <label>Unit</label>
+          <input type="text" id="vegUnit" value="kg">
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">💾 Save Price</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- View Prices -->
+  <div class="card">
+    <h2>📊 View Market Prices</h2>
+    <div class="tabs" id="marketTabs"></div>
+    <div id="priceTableContainer">
+      <p style="color:#78909c;">Select a market to view prices</p>
+    </div>
+  </div>
+
+  <!-- Activity Log -->
+  <div class="card">
+    <h2>📝 Activity Log</h2>
+    <div class="log" id="logContainer">
+      <div class="log-entry log-info">Ready. Connecting to Firebase...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase SDK (Compat — works without a server) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // 🔥 Your Firebase Config (from firebase_options.dart)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBZvshkIgYdz_1JSukO6d3JyJE9mP_NUgg",
+    authDomain: "govi-final-v3.firebaseapp.com",
+    projectId: "govi-final-v3",
+    storageBucket: "govi-final-v3.firebasestorage.app",
+    messagingSenderId: "1019433110549",
+    appId: "1:1019433110549:web:f93b72aac97af2256c921c"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // Status
+  const statusEl = document.getElementById('fbStatus');
+  statusEl.textContent = '✅ Connected to Firebase';
+  statusEl.classList.add('connected');
+
+  const markets = [
+    'දඹුල්ල', 'පැල්ල', 'මීගොඩ', 'රත්මලාන', 'බෝකුන්දර',
+    'නාරහෙන්පිට', 'තිස්ස', 'වේයන්ගොඩ', 'කැප්පෙටිපොල', 'තඹුත්තේගම'
+  ];
+
+  const vegetables = [
+    { si: 'වම්බටු', en: 'Brinjal', basePrice: 120 },
+    { si: 'මිරිස්', en: 'Chilli', basePrice: 350 },
+    { si: 'වටක්කා', en: 'Pumpkin', basePrice: 150 },
+    { si: 'කැරට්', en: 'Carrot', basePrice: 180 },
+    { si: 'තක්කාලි', en: 'Tomato', basePrice: 200 },
+    { si: 'බණ්ඩක්කා', en: 'Okra', basePrice: 160 },
+    { si: 'බෝංචි', en: 'Beans', basePrice: 280 },
+    { si: 'ලීක්ස්', en: 'Leeks', basePrice: 220 },
+    { si: 'කොළ එළවළු', en: 'Green Vegetables', basePrice: 100 },
+    { si: 'අල', en: 'Potato', basePrice: 250 },
+    { si: 'සෝයාබෝංචි', en: 'Soybean', basePrice: 300 },
+    { si: 'කරවිල', en: 'Bitter Gourd', basePrice: 190 },
+    { si: 'පිපිඤ්ඤා', en: 'Cucumber', basePrice: 130 },
+    { si: 'කැබැල්ලා', en: 'Snake Gourd', basePrice: 170 },
+    { si: 'රාබු', en: 'Radish', basePrice: 140 },
+    { si: 'බීට්රූට්', en: 'Beetroot', basePrice: 210 },
+  ];
+
+  const variations = {
+    'දඹුල්ල': 0.85, 'පැල්ල': 1.0, 'මීගොඩ': 1.1, 'රත්මලාන': 1.15,
+    'බෝකුන්දර': 1.05, 'නාරහෙන්පිට': 1.2, 'තිස්ස': 0.9,
+    'වේයන්ගොඩ': 0.95, 'කැප්පෙටිපොල': 0.88, 'තඹුත්තේගම': 0.92,
+  };
+
+  // Build market tabs
+  let selectedMarket = null;
+  const tabsEl = document.getElementById('marketTabs');
+  markets.forEach(m => {
+    const tab = document.createElement('div');
+    tab.className = 'tab';
+    tab.textContent = m;
+    tab.onclick = () => selectMarket(m);
+    tabsEl.appendChild(tab);
+  });
+
+  function log(msg, type = 'info') {
+    const el = document.getElementById('logContainer');
+    const entry = document.createElement('div');
+    entry.className = `log-entry log-${type}`;
+    const time = new Date().toLocaleTimeString();
+    entry.textContent = `[${time}] ${msg}`;
+    el.appendChild(entry);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ========== SEED DATA ==========
+  async function seedAllData() {
+    const btn = document.getElementById('seedBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Seeding...';
+    log('Starting seed for all markets...', 'info');
+
+    try {
+      const batch = db.batch();
+
+      for (const market of markets) {
+        const marketRef = db.collection('markets').doc(market);
+        batch.set(marketRef, { name: market, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+        const variation = variations[market] || 1.0;
+
+        for (const veg of vegetables) {
+          const price = Math.round(veg.basePrice * variation);
+          const docId = veg.en.toLowerCase().replace(/\s+/g, '_');
+          const priceRef = marketRef.collection('prices').doc(docId);
+
+          batch.set(priceRef, {
+            vegetableName: veg.si,
+            vegetableNameEn: veg.en,
+            price: price,
+            market: market,
+            unit: 'kg',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+      }
+
+      await batch.commit();
+      log(`✅ Seeded ${markets.length} markets × ${vegetables.length} vegetables = ${markets.length * vegetables.length} records`, 'success');
+      if (selectedMarket) selectMarket(selectedMarket);
+    } catch (err) {
+      log(`❌ Seed failed: ${err.message}`, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⚡ Seed All Market Data';
+    }
+  }
+
+  // ========== ADD PRICE ==========
+  async function addPrice(e) {
+    e.preventDefault();
+    const market = document.getElementById('marketSelect').value;
+    const vegNameSi = document.getElementById('vegNameSi').value.trim();
+    const vegNameEn = document.getElementById('vegNameEn').value.trim();
+    const price = Number(document.getElementById('vegPrice').value);
+    const unit = document.getElementById('vegUnit').value.trim() || 'kg';
+
+    if (!vegNameSi || !vegNameEn || !price) {
+      log('❌ All fields are required', 'error');
+      return;
+    }
+
+    try {
+      const marketRef = db.collection('markets').doc(market);
+      await marketRef.set({ name: market, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+
+      const docId = vegNameEn.toLowerCase().replace(/\s+/g, '_');
+      await marketRef.collection('prices').doc(docId).set({
+        vegetableName: vegNameSi,
+        vegetableNameEn: vegNameEn,
+        price: price,
+        market: market,
+        unit: unit,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+
+      log(`✅ Saved: ${vegNameEn} in ${market} = Rs.${price}/${unit}`, 'success');
+      document.getElementById('vegNameSi').value = '';
+      document.getElementById('vegNameEn').value = '';
+      document.getElementById('vegPrice').value = '';
+
+      if (selectedMarket === market) selectMarket(market);
+    } catch (err) {
+      log(`❌ Save failed: ${err.message}`, 'error');
+    }
+  }
+
+  // ========== VIEW PRICES ==========
+  async function selectMarket(market) {
+    selectedMarket = market;
+
+    // Update tabs
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.textContent === market);
+    });
+
+    const container = document.getElementById('priceTableContainer');
+    container.innerHTML = '<p style="color:#78909c;">Loading...</p>';
+
+    try {
+      const snapshot = await db.collection('markets').doc(market).collection('prices').orderBy('vegetableName').get();
+
+      if (snapshot.empty) {
+        container.innerHTML = '<p style="color:#78909c;">No prices found. Use Seed or Add form above.</p>';
+        return;
+      }
+
+      let html = `<table class="price-table">
+        <thead><tr>
+          <th>Vegetable</th>
+          <th>English</th>
+          <th>Price</th>
+          <th>Unit</th>
+          <th>Action</th>
+        </tr></thead><tbody>`;
+
+      snapshot.docs.forEach(doc => {
+        const d = doc.data();
+        html += `<tr>
+          <td>${d.vegetableName}</td>
+          <td>${d.vegetableNameEn}</td>
+          <td><span class="price-badge">Rs. ${d.price}</span></td>
+          <td>${d.unit || 'kg'}</td>
+          <td><button class="btn btn-danger" onclick="deletePrice('${market}','${doc.id}')">🗑</button></td>
+        </tr>`;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+      log(`📊 Loaded ${snapshot.docs.length} prices for ${market}`, 'info');
+    } catch (err) {
+      container.innerHTML = `<p style="color:#ef5350;">Error: ${err.message}</p>`;
+      log(`❌ Load failed: ${err.message}`, 'error');
+    }
+  }
+
+  // ========== DELETE ==========
+  async function deletePrice(market, docId) {
+    if (!confirm(`Delete ${docId} from ${market}?`)) return;
+    try {
+      await db.collection('markets').doc(market).collection('prices').doc(docId).delete();
+      log(`🗑 Deleted ${docId} from ${market}`, 'success');
+      selectMarket(market);
+    } catch (err) {
+      log(`❌ Delete failed: ${err.message}`, 'error');
+    }
+  }
+</script>
+
+</body>
+</html>
