@@ -1,4 +1,4 @@
-import 'dart:convert'; // 🔥 Base64 සඳහා අනිවාර්යයි
+import 'dart:convert'; 
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,7 +20,7 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
   late TextEditingController _regionController;
 
   bool _isUpdating = false;
-  String? _base64Image; // 🔥 පින්තූරය string එකක් විදිහට තියාගන්න
+  String? _base64Image;
   final ImagePicker _picker = ImagePicker();
 
   final List<String> _slDistricts = [
@@ -48,12 +48,12 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
     super.dispose();
   }
 
-  // 🔥 Image එක තෝරාගෙන ඒක Base64 වලට හරවන Function එක
+  
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 30, // ⚠️ වැදගත්: Firestore එකේ සීමාවන් නිසා quality එක අඩු කරන්න
-      maxWidth: 400,    // size එකත් අඩු කරන්න
+      imageQuality: 30, 
+      maxWidth: 400,    
     );
 
     if (pickedFile != null) {
