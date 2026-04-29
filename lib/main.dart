@@ -13,6 +13,8 @@ import 'screens/select_Veg/select_veg_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'package:govi_app/logic/user_provider.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -32,8 +34,11 @@ Future<void> main() async {
   }
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+      ],
       child: const MyApp(),
     ),
   );

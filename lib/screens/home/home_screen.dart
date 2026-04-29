@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // 🔥 Firebase සඳහා
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../../logic/user_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int) onNavigate;
@@ -20,9 +22,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _currentCarouselIndex = 0;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-
-  // නම Firebase එකෙන් ගන්න නිසා මේක Default එකක් විදිහට තියමු
-  final String farmerName = "Kamal";
 
   final List<Map<String, String>> carouselItems = const [
     {
@@ -141,7 +140,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _onNotificationPressed() {
-    // Notification Screen එකට navigate කිරීම
     widget.onNavigate(5);
   }
 
@@ -149,9 +147,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final userProvider = Provider.of<UserProvider>(context);
+    final farmerId = userProvider.currentFarmerId;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor, // 🔥 Adaptive Background
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -167,9 +167,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     FadeTransition(
                       opacity: _fadeAnimation,
                       child: StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance.collection('farmers').limit(1).snapshots(),
+                        stream: FirebaseFirestore.instance
+                            .collection('farmers')
+                            .where('farmerId', isEqualTo: farmerId)
+                            .limit(1)
+                            .snapshots(),
                         builder: (context, snapshot) {
-                          String name = farmerName;
+                          String name = "Farmer";
                           if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                             name = snapshot.data!.docs.first['full_name'].split(' ')[0];
                           }
@@ -278,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Container(
                   height: 50,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surface, // 🔥 Adaptive Search Bar
+                    color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(25),
                     boxShadow: [
                       BoxShadow(
@@ -571,7 +575,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface, // 🔥 Adaptive Card
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: Colors.grey.withOpacity(0.1)),
           boxShadow: [

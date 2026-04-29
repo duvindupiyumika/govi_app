@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // 🔥 Firestore import එක අනිවාර්යයි
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../../logic/user_provider.dart';
 import 'crop_detail_screen.dart';
 
 class TrackingScreen extends StatelessWidget {
@@ -7,93 +9,88 @@ class TrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final farmerId = userProvider.currentFarmerId;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Crops'),
-        backgroundColor: const Color(0xFF2E7D32), // ගොවි ඇප් එකට ගැලපෙන කොළ පාට
+        title: const Text('My Crops', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: const Color(0xFF2E7D32),
+        elevation: 0,
       ),
-      // 🔥 StreamBuilder පාවිච්චි කරන්නේ Firebase එකේ දත්ත වෙනස් වුණ ගමන් App එකේ ඉබේම පේන්නයි
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('crops').snapshots(),
         builder: (context, snapshot) {
-          // 1. Error එකක් ආවොත් පෙන්වන විදිහ
-          if (snapshot.hasError) {
-            return const Center(child: Text('Something went wrong! ❌'));
-          }
+          if (snapshot.hasError) return const Center(child: Text('Something went wrong! ❌'));
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: Colors.green));
 
-          // 2. Data ටික ලෝඩ් වෙනකම් Loading එකක් පෙන්වනවා
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.green));
-          }
-
-          // 3. Firestore එකෙන් එන දත්ත ටික List එකකට ගන්නවා
           final docs = snapshot.data!.docs;
-
-          // දත්ත කිසිවක් නැතිනම් (Collection එක හිස් නම්)
-          if (docs.isEmpty) {
-            return const Center(child: Text('No crops found. Add some in Firebase! 🌱'));
-          }
+          if (docs.isEmpty) return const Center(child: Text('No crops found. 🌱'));
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: docs.length,
             itemBuilder: (context, index) {
-              // එක Document එකක දත්ත Map එකක් විදිහට ගන්නවා
               final crop = docs[index].data() as Map<String, dynamic>;
+              String cropName = (crop['name'] ?? 'brinjal').toString().toLowerCase().trim();
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.green[100],
-                    child: Text(
-                      crop['name'] != null ? crop['name'][0] : '?',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-                    ),
-                  ),
-                  title: Text(
-                    crop['name'] ?? 'Unknown Crop',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Planted: ${crop['planted'] ?? 'N/A'}'),
-                      Text('Expected: ${crop['expectedYield'] ?? '0'} kg'),
-                      Text('Harvest: ${crop['harvest'] ?? 'N/A'}'),
-                      // Alerts (Firestore එකේ Array එකක් විදිහට තිබ්බොත් විතරක් පෙන්වන්න)
-                      if (crop['alerts'] != null && (crop['alerts'] as List).isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.warning, color: Colors.red, size: 16),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  crop['alerts'][0],
-                                  style: const TextStyle(color: Colors.red, fontSize: 12),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+              return FutureBuilder<DocumentSnapshot>(
+                // 🔥 vegetable_metadata එකෙන් image එක ගන්නවා
+                future: FirebaseFirestore.instance.collection('vegetable_metadata').doc(cropName).get(),
+                builder: (context, metaSnap) {
+                  String? imageUrl;
+                  if (metaSnap.hasData && metaSnap.data!.exists) {
+                    var metaData = metaSnap.data!.data() as Map<String, dynamic>;
+                    imageUrl = metaData['imageUrl'] ?? metaData['image'];
+                  }
+
+                  // Internet Fallback Images
+                  String fallbackUrl = "https://images.unsplash.com/photo-1518843875459-f738682238a6?q=80&w=200&auto=format&fit=crop";
+                  if (cropName.contains('brinjal')) fallbackUrl = "https://images.unsplash.com/photo-1590333746438-283fd638131e?q=80&w=200&auto=format&fit=crop";
+                  if (cropName.contains('pumpkin')) fallbackUrl = "https://images.unsplash.com/photo-1506806732259-39c2d4612173?q=80&w=200&auto=format&fit=crop";
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          imageUrl ?? fallbackUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.green[100],
+                            child: const Icon(Icons.eco, color: Colors.green),
                           ),
                         ),
-                    ],
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    // 🔥 මෙතනදී තමයි Detail Screen එකට දත්ත ටික පාස් වෙන්නේ
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CropDetailScreen(crop: crop),
                       ),
-                    );
-                  },
-                ),
+                      title: Text(
+                        crop['name'] ?? 'Unknown Crop',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Planted: ${crop['planted'] ?? 'N/A'}\nExpected: ${crop['expectedYield'] ?? '0'} kg',
+                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        ),
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.green),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => CropDetailScreen(crop: crop)),
+                        );
+                      },
+                    ),
+                  );
+                },
               );
             },
           );
