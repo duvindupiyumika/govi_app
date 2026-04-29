@@ -33,20 +33,37 @@ class _DiseaseScanScreenState extends State<DiseaseScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("රෝග විනිශ්චය"), backgroundColor: Colors.green),
+      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text("රෝග විනිශ්චය"), backgroundColor: const Color(0xFF1B5E20), foregroundColor: Colors.white),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            if (_imageBytes != null) Image.memory(_imageBytes!, height: 250, width: double.infinity, fit: BoxFit.cover)
-            else Container(height: 250, color: Colors.grey[200], child: const Icon(Icons.camera_alt, size: 100, color: Colors.grey)),
+            Container(
+              height: 250, width: double.infinity,
+              margin: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(25), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)]),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(25),
+                child: _imageBytes != null ? Image.memory(_imageBytes!, fit: BoxFit.cover) : const Center(child: Icon(Icons.add_a_photo_outlined, size: 50, color: Colors.grey)),
+              ),
+            ),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 25),
               child: Column(
                 children: [
-                  ElevatedButton(onPressed: _pickImage, child: const Text("ඡායාරූපයක් තෝරන්න")),
-                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, minimumSize: const Size(double.infinity, 50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+                    onPressed: _pickImage, icon: const Icon(Icons.camera_alt, color: Colors.white), label: const Text("ඡායාරූපයක් තෝරන්න", style: TextStyle(color: Colors.white)),
+                  ),
+                  const SizedBox(height: 25),
                   if (_isLoading) const CircularProgressIndicator(color: Colors.green),
-                  Text(_result, style: const TextStyle(fontSize: 16, height: 1.5)),
+                  if (_result.isNotEmpty) 
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(color: Colors.orange.withOpacity(0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.orange.withOpacity(0.3))),
+                      child: Text(_result, style: const TextStyle(fontSize: 16, height: 1.6)),
+                    ),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),

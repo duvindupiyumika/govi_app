@@ -26,22 +26,42 @@ class _FertilizerAdvisorScreenState extends State<FertilizerAdvisorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("පොහොර උපදේශක"), backgroundColor: Colors.green),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(controller: _cropController, decoration: const InputDecoration(labelText: "වගාව")),
-              TextField(controller: _ageController, decoration: const InputDecoration(labelText: "වගාවේ වයස (සති)")),
-              const SizedBox(height: 20),
-              ElevatedButton(onPressed: _getAdvice, child: const Text("උපදෙස් ලබාගන්න")),
-              const SizedBox(height: 20),
-              if (_isLoading) const CircularProgressIndicator(color: Colors.green),
-              Text(_result, style: const TextStyle(fontSize: 16)),
-            ],
-          ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text("පොහොර උපදේශක"), backgroundColor: const Color(0xFF1B5E20), foregroundColor: Colors.white),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(25),
+        child: Column(
+          children: [
+            _buildInputField(_cropController, "වගාව (උදා: වී, බඩඉරිඟු)", Icons.eco),
+            const SizedBox(height: 15),
+            _buildInputField(_ageController, "වගාවේ වයස (සති)", Icons.calendar_today),
+            const SizedBox(height: 25),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5E20), minimumSize: const Size(double.infinity, 50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+              onPressed: _isLoading ? null : _getAdvice,
+              child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("උපදෙස් ලබාගන්න", style: TextStyle(color: Colors.white, fontSize: 16)),
+            ),
+            const SizedBox(height: 30),
+            if (_result.isNotEmpty) 
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(color: Colors.purple.withOpacity(0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.purple.withOpacity(0.3))),
+                child: Text(_result, style: const TextStyle(fontSize: 16, height: 1.6)),
+              ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInputField(TextEditingController controller, String label, IconData icon) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.purple),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+        filled: true, fillColor: Colors.grey[50],
       ),
     );
   }
