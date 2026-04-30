@@ -12,6 +12,7 @@ import 'screens/profile/profile_screen.dart';
 import 'screens/select_Veg/select_veg_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'screens/profile/language_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,11 +33,14 @@ Future<void> main() async {
   }
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
-      child: const MyApp(),
-    ),
-  );
+  MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => ThemeProvider()), 
+      ChangeNotifierProvider(create: (_) => LanguageProvider()), 
+    ],
+    child: const MyApp(), 
+  ),
+);
 }
 
 class MyApp extends StatelessWidget {

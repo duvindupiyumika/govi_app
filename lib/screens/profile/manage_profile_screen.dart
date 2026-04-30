@@ -1,8 +1,9 @@
-import 'dart:convert'; 
-import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'language_provider.dart'; // 🔥 Import the language provider
 
 class ManageProfileScreen extends StatefulWidget {
   const ManageProfileScreen({super.key});
@@ -23,13 +24,6 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
   String? _base64Image;
   final ImagePicker _picker = ImagePicker();
 
-  final List<String> _slDistricts = [
-    "Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo", "Galle", "Gampaha",
-    "Hambantota", "Jaffna", "Kalutara", "Kandy", "Kegalle", "Kilinochchi", "Kurunegala",
-    "Mannar", "Matale", "Matara", "Moneragala", "Mullaitivu", "Nuwara Eliya", "Polonnaruwa",
-    "Puttalam", "Ratnapura", "Trincomalee", "Vavuniya"
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -48,18 +42,17 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
     super.dispose();
   }
 
-  
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 30, 
-      maxWidth: 400,    
+      imageQuality: 30,
+      maxWidth: 400,
     );
 
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _base64Image = base64Encode(bytes); // 🔥 Image to String
+        _base64Image = base64Encode(bytes);
       });
     }
   }
@@ -67,24 +60,29 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
   Future<void> _updateProfile(String docId, String? currentImage) async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isUpdating = true);
+      // Get translations for snackbar
+      final t = Provider.of<LanguageProvider>(context, listen: false).texts;
+
       try {
         await FirebaseFirestore.instance.collection('farmers').doc(docId).update({
           'full_name': _nameController.text.trim(),
           'phone_number': _phoneController.text.trim(),
           'email': _emailController.text.trim(),
           'region': _regionController.text.trim(),
-          'profile_pic': _base64Image ?? currentImage, // 🔥 අලුත් එක නැත්නම් පරණ එක තියනවා
+          'profile_pic': _base64Image ?? currentImage,
         });
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Profile Updated Successfully! ✅")),
+            SnackBar(content: Text(t['update_success']!)),
           );
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Update Failed: $e ❌")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("${t['update_failed']} $e ❌")),
+          );
+        }
       } finally {
         if (mounted) setState(() => _isUpdating = false);
       }
@@ -95,11 +93,15 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    
+    // 🔥 Get translated texts from provider
+    final langProvider = Provider.of<LanguageProvider>(context);
+    final t = langProvider.texts;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Manage Profile", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(t['manage_profile']!, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: theme.appBarTheme.backgroundColor,
         elevation: 0,
       ),
@@ -110,7 +112,7 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
             return const Center(child: CircularProgressIndicator(color: Colors.green));
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("No Farmer Data Found"));
+            return Center(child: Text(t['no_data']!));
           }
 
           var userData = snapshot.data!.docs.first;
@@ -140,7 +142,6 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
                           CircleAvatar(
                             radius: 65,
                             backgroundColor: isDark ? Colors.grey[800] : Colors.white,
-                            // 🔥 Base64 String එක පින්තූරයක් විදිහට පෙන්වන හැටි
                             backgroundImage: _base64Image != null
                                 ? MemoryImage(base64Decode(_base64Image!))
                                 : (data['profile_pic'] != null && data['profile_pic'] != ""
@@ -166,7 +167,7 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
                       ),
                       const SizedBox(height: 15),
                       Text(
-                          _nameController.text,
+                          _nameController.text.isNotEmpty ? _nameController.text : t['full_name']!,
                           style: TextStyle(color: isDark ? Colors.green : Colors.white, fontSize: 24, fontWeight: FontWeight.bold)
                       ),
                     ],
@@ -180,15 +181,15 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Personal Information", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                        Text(t['personal_info']!, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
                         const SizedBox(height: 20),
-                        _buildProfileInput(context, "Full Name", _nameController, Icons.person_outline),
+                        _buildProfileInput(context, t['full_name']!, _nameController, Icons.person_outline),
                         const SizedBox(height: 20),
-                        _buildProfileInput(context, "Email Address", _emailController, Icons.email_outlined),
+                        _buildProfileInput(context, t['email']!, _emailController, Icons.email_outlined),
                         const SizedBox(height: 20),
-                        _buildProfileInput(context, "Phone Number", _phoneController, Icons.phone_android_outlined, isNumber: true),
+                        _buildProfileInput(context, t['phone']!, _phoneController, Icons.phone_android_outlined, isNumber: true),
                         const SizedBox(height: 20),
-                        _buildProfileInput(context, "District (Region)", _regionController, Icons.location_on_outlined),
+                        _buildProfileInput(context, t['district']!, _regionController, Icons.location_on_outlined),
                         const SizedBox(height: 40),
                         SizedBox(
                           width: double.infinity,
@@ -201,7 +202,7 @@ class _ManageProfileScreenState extends State<ManageProfileScreen> {
                             ),
                             child: _isUpdating
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text("SAVE CHANGES", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                : Text(t['save_changes']!, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],

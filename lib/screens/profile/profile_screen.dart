@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import 'manage_profile_screen.dart';
 import 'notification_screen.dart';
 import 'theme_provider.dart';
-import 'help_center_screen.dart'; 
+import 'help_center_screen.dart';
+import 'language_provider.dart'; // 🔥 Import the language provider
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,65 +15,17 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String selectedLang = "si";
-
-  final Map<String, Map<String, String>> localizedText = {
-    'en': {
-      'title': 'Profile',
-      'account': 'Account',
-      'manage': 'Manage Profile',
-      'notif': 'Notifications',
-      'lang': 'Language',
-      'lang_name': 'English',
-      'pref': 'Preferences',
-      'about': 'About Us',
-      'theme': 'Dark Mode',
-      'support': 'Support',
-      'help': 'Help Center',
-    },
-    'si': {
-      'title': 'පැතිකඩ',
-      'account': 'ගිණුම',
-      'manage': 'පැතිකඩ කළමනාකරණය',
-      'notif': 'දැනුම්දීම්',
-      'lang': 'භාෂාව',
-      'lang_name': 'සිංහල',
-      'pref': 'මනාප',
-      'about': 'අපි ගැන',
-      'theme': 'අඳුරු මාදිලිය',
-      'support': 'සහාය',
-      'help': 'උදවු මධ්‍යස්ථානය',
-    },
-    'ta': {
-      'title': 'சுயவிவரம்',
-      'account': 'கணக்கு',
-      'manage': 'சுயவிவரத்தை நிர்வகி',
-      'notif': 'அறிவிப்புகள்',
-      'lang': 'மொழி',
-      'lang_name': 'தமிழ்',
-      'pref': 'விருப்பத்தேர்வுகள்',
-      'about': 'எங்களைப் பற்றி',
-      'theme': 'இருண்ட මාදිலிய',
-      'support': 'ஆதரவு',
-      'help': 'உதவி மையம்',
-    },
-  };
-
-  void changeLanguage(String langCode) {
-    setState(() {
-      selectedLang = langCode;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    var t = localizedText[selectedLang]!;
+    // 🔥 Get translated texts from provider
+    final langProvider = Provider.of<LanguageProvider>(context);
+    final t = langProvider.texts;
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(t['title']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(t['profile_title']!, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
@@ -90,7 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text("No farmer data found."));
+                  return Center(child: Text(t['no_data']!));
                 }
 
                 var farmerData = snapshot.data!.docs.first.data() as Map<String, dynamic>;
@@ -119,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                              farmerData['full_name'] ?? "Farmer Name",
+                              farmerData['full_name'] ?? t['full_name']!,
                               style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -127,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               )
                           ),
                           Text(
-                              farmerData['email'] ?? "Email Address",
+                              farmerData['email'] ?? t['email']!,
                               style: const TextStyle(color: Colors.grey)
                           ),
                         ],
@@ -146,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildSectionBox([
               _buildMenuItem(
                 Icons.person_outline,
-                t['manage']!,
+                t['manage_profile']!,
                 onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => const ManageProfileScreen()));
                 },
@@ -154,31 +107,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildDivider(),
               _buildMenuItem(
                 Icons.notifications_none,
-                t['notif']!,
+                t['notifications']!,
                 onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen()));
                 },
               ),
               _buildDivider(),
-              _buildMenuItem(Icons.language, t['lang']!, trailingText: t['lang_name']!, onTap: () {
-                _showLanguageDialog();
+              _buildMenuItem(Icons.language, t['language']!, trailingText: t['lang_name']!, onTap: () {
+                _showLanguageDialog(context);
               }),
             ]),
 
             const SizedBox(height: 20),
-            Text(t['pref']!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+            Text(t['preferences']!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 8),
             _buildSectionBox([
-              _buildMenuItem(Icons.info_outline, t['about']!),
+              _buildMenuItem(Icons.info_outline, t['about_us']!),
               _buildDivider(),
               _buildMenuItem(
                 Icons.palette_outlined,
-                t['theme']!,
+                t['dark_mode']!,
                 trailing: Switch(
-                  value: themeProvider.isDarkMode,
+                  value: themeProvider.isDarkMode, // Ensure ThemeProvider has isDarkMode getter
                   activeColor: Colors.green,
                   onChanged: (value) {
-                    themeProvider.toggleTheme(value);
+                    themeProvider.toggleTheme(value); // Ensure ThemeProvider has toggleTheme method
                   },
                 ),
               ),
@@ -190,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildSectionBox([
               _buildMenuItem(
                 Icons.help_outline,
-                t['help']!,
+                t['help_center']!,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -205,7 +158,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showLanguageDialog() {
+  void _showLanguageDialog(BuildContext context) {
+    final langProvider = Provider.of<LanguageProvider>(context, listen: false);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -213,9 +168,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(title: const Text("English"), onTap: () { changeLanguage("en"); Navigator.pop(context); }),
-            ListTile(title: const Text("සිංහල"), onTap: () { changeLanguage("si"); Navigator.pop(context); }),
-            ListTile(title: const Text("தமிழ்"), onTap: () { changeLanguage("ta"); Navigator.pop(context); }),
+            ListTile(title: const Text("English"), onTap: () { langProvider.changeLanguage("en"); Navigator.pop(context); }),
+            ListTile(title: const Text("සිංහල"), onTap: () { langProvider.changeLanguage("si"); Navigator.pop(context); }),
+            ListTile(title: const Text("தமிழ்"), onTap: () { langProvider.changeLanguage("ta"); Navigator.pop(context); }),
           ],
         );
       },
