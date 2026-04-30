@@ -1,46 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'screens/profile/theme_provider.dart'; 
+import 'core/storage/local_storage_service.dart';
+import 'screens/profile/theme_provider.dart';
 import 'firebase_options.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/tracking/tracking_screen.dart';
 import 'screens/ai_suggestions/ai_suggestions_screen.dart';
 import 'screens/market/market_screen.dart';
 import 'screens/knowledge/knowledge_screen.dart';
+import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/profile/profile_screen.dart';
-import 'screens/select_Veg/select_veg_screen.dart';
+import 'screens/select_veg/select_veg_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  var firebaseInitialized = false;
+
+  await LocalStorageService.initialize();
 
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print("Firebase Initialized Successfully! ✅");
+    firebaseInitialized = true;
+    debugPrint('Firebase initialized successfully.');
   } catch (e) {
-    print("Firebase Initialization Error: $e ❌");
+    debugPrint('Firebase initialization error: $e');
   }
 
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    print("Error loading .env file: $e");
+    debugPrint('Error loading .env file: $e');
   }
 
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
-      child: const MyApp(),
+      child: MyApp(firebaseInitialized: firebaseInitialized),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool firebaseInitialized;
+
+  const MyApp({super.key, this.firebaseInitialized = true});
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +58,40 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Smart Agriculture',
       debugShowCheckedModeBanner: false,
+      locale: themeProvider.locale,
+      supportedLocales: const [Locale('en'), Locale('ta')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
       themeMode: themeProvider.themeMode,
       theme: MyThemes.lightTheme,
       darkTheme: MyThemes.darkTheme,
-      home: const MainScreen(),
+      home: firebaseInitialized
+          ? (themeProvider.onboardingComplete
+                ? const MainScreen()
+                : const OnboardingFlowScreen())
+          : const StartupErrorScreen(),
+    );
+  }
+}
+
+class StartupErrorScreen extends StatelessWidget {
+  const StartupErrorScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'GOVI could not connect to Firebase. Please check configuration and try again.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -87,7 +126,7 @@ class _MainScreenState extends State<MainScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _navigatorKey.currentState?.pushNamedAndRemoveUntil(
           _routeNames[index]!,
-              (route) => false,
+          (route) => false,
         );
       });
     }
@@ -108,10 +147,8 @@ class _MainScreenState extends State<MainScreen> {
           switch (settings.name) {
             case '/':
             case '/home':
-              builder = (context) => HomeScreen(
-                onNavigate: _onNavBarTap,
-                onPushRoute: _pushRoute,
-              );
+              builder = (context) =>
+                  HomeScreen(onNavigate: _onNavBarTap, onPushRoute: _pushRoute);
               break;
             case '/tracking':
               builder = (context) => const TrackingScreen();
@@ -132,10 +169,8 @@ class _MainScreenState extends State<MainScreen> {
               builder = (context) => const SelectVegScreen();
               break;
             default:
-              builder = (context) => HomeScreen(
-                onNavigate: _onNavBarTap,
-                onPushRoute: _pushRoute,
-              );
+              builder = (context) =>
+                  HomeScreen(onNavigate: _onNavBarTap, onPushRoute: _pushRoute);
               break;
           }
           return MaterialPageRoute(builder: builder, settings: settings);

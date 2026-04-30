@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+
+import '../../features/knowledge/data/knowledge_repository.dart';
+import '../../features/knowledge/domain/knowledge_guide.dart';
+import '../profile/theme_provider.dart';
 
 class KnowledgeScreen extends StatefulWidget {
   const KnowledgeScreen({super.key});
@@ -9,437 +13,388 @@ class KnowledgeScreen extends StatefulWidget {
 }
 
 class _KnowledgeScreenState extends State<KnowledgeScreen> {
-<<<<<<< HEAD
-  String? _selectedVegetableId;
-  String? _selectedVegetableName;
-  String? _expandedGuideId;
-=======
-  String? _selectedVegetableId; // දැනට තෝරාගෙන ඇති බෝගයේ ID එක
-  String? _expandedInstructionId; // විවෘත කර ඇති රෝගයේ/උපදෙසේ ID එක
->>>>>>> master
+  final _knowledgeRepository = KnowledgeRepository();
+  final _searchController = TextEditingController();
+
+  String _selectedCropId = 'all';
+  String _selectedCategory = 'all';
+  String _query = '';
+  bool _isSyncing = false;
+  String? _syncMessage;
+
+  static const _categories = {
+    'all': 'All',
+    'land': 'Land',
+    'water': 'Water',
+    'fertilizer': 'Fertilizer',
+    'pest': 'Pest',
+    'disease': 'Disease',
+    'general': 'General',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _knowledgeRepository.seedDefaultsIfEmpty().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _syncGuides() async {
+    setState(() {
+      _isSyncing = true;
+      _syncMessage = null;
+    });
+
+    try {
+      final count = await _knowledgeRepository.syncFromFirebase();
+      if (!mounted) return;
+      setState(() {
+        _syncMessage = count == 0
+            ? 'No online guide updates found.'
+            : 'Synced $count guide updates.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _syncMessage = 'Offline mode: showing saved guides.';
+      });
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final languageCode = context.watch<ThemeProvider>().languageCode;
+
     return Scaffold(
       appBar: AppBar(
-<<<<<<< HEAD
         title: const Text('බෝග දැනුම'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         elevation: 0,
-=======
-        title: const Text('බෝග දැනුම හා උපදෙස්'),
-        backgroundColor: Colors.green,
->>>>>>> master
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Sync guides',
+            onPressed: _isSyncing ? null : _syncGuides,
+            icon: _isSyncing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.sync),
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-<<<<<<< HEAD
-            // Header
-            Container(
-              width: double.infinity,
+      body: StreamBuilder<List<KnowledgeGuide>>(
+        stream: _knowledgeRepository.watchAll(),
+        builder: (context, snapshot) {
+          final guides = _knowledgeRepository.guidesFor(
+            languageCode: languageCode,
+            cropId: _selectedCropId == 'all' ? null : _selectedCropId,
+            category: _selectedCategory,
+            query: _query,
+          );
+
+          return RefreshIndicator(
+            onRefresh: _syncGuides,
+            child: ListView(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.green.shade200),
+              children: [
+                _buildHeader(),
+                if (_syncMessage != null) ...[
+                  const SizedBox(height: 12),
+                  _buildSyncMessage(_syncMessage!),
+                ],
+                const SizedBox(height: 18),
+                _buildSearch(),
+                const SizedBox(height: 14),
+                _buildCropFilters(languageCode),
+                const SizedBox(height: 12),
+                _buildCategoryFilters(),
+                const SizedBox(height: 18),
+                if (guides.isEmpty)
+                  _buildEmptyState()
+                else
+                  ...guides.map((guide) => _GuideCard(guide: guide)),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.school, color: Colors.green, size: 30),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Offline Knowledge Base',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                Text(
+                  'Saved crop guides work without internet. Pull down or tap sync for online updates.',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSyncMessage(String message) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.green.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: Colors.green, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(message)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearch() {
+    return TextField(
+      controller: _searchController,
+      onChanged: (value) => setState(() => _query = value),
+      decoration: InputDecoration(
+        hintText: 'Search guides...',
+        prefixIcon: const Icon(Icons.search, color: Colors.green),
+        suffixIcon: _query.isEmpty
+            ? null
+            : IconButton(
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _query = '');
+                },
+                icon: const Icon(Icons.clear),
               ),
-              child: const Row(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    );
+  }
+
+  Widget _buildCropFilters(String languageCode) {
+    final entries = [
+      const MapEntry('all', 'All crops'),
+      ...KnowledgeRepository.cropIds.map(
+        (id) => MapEntry(
+          id,
+          KnowledgeRepository.cropNames[id]?[languageCode] ??
+              KnowledgeRepository.cropNames[id]?['en'] ??
+              id,
+        ),
+      ),
+    ];
+
+    return SizedBox(
+      height: 42,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: entries.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final entry = entries[index];
+          return ChoiceChip(
+            label: Text(entry.value),
+            selected: _selectedCropId == entry.key,
+            selectedColor: Colors.green,
+            labelStyle: TextStyle(
+              color: _selectedCropId == entry.key ? Colors.white : null,
+            ),
+            onSelected: (_) => setState(() => _selectedCropId = entry.key),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilters() {
+    final entries = _categories.entries.toList();
+
+    return SizedBox(
+      height: 42,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: entries.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final entry = entries[index];
+          return FilterChip(
+            label: Text(entry.value),
+            selected: _selectedCategory == entry.key,
+            onSelected: (_) => setState(() => _selectedCategory = entry.key),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        children: [
+          Icon(Icons.menu_book_outlined, size: 72, color: Colors.grey[400]),
+          const SizedBox(height: 12),
+          const Text(
+            'No guides found',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Try a different crop, category, or search term.',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuideCard extends StatefulWidget {
+  final KnowledgeGuide guide;
+
+  const _GuideCard({required this.guide});
+
+  @override
+  State<_GuideCard> createState() => _GuideCardState();
+}
+
+class _GuideCardState extends State<_GuideCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryColor = _categoryColor(widget.guide.category);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: categoryColor.withValues(alpha: 0.12),
+              child: Icon(
+                _categoryIcon(widget.guide.category),
+                color: categoryColor,
+              ),
+            ),
+            title: Text(
+              widget.guide.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              [
+                widget.guide.category,
+                if (widget.guide.stageDay != null)
+                  'Day ${widget.guide.stageDay}',
+              ].join(' • '),
+            ),
+            trailing: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+            onTap: () => setState(() => _expanded = !_expanded),
+          ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.school, color: Colors.green, size: 28),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
+                  const Divider(),
+                  Text(widget.guide.description),
+                  if (widget.guide.remedy?.isNotEmpty == true) ...[
+                    const SizedBox(height: 10),
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'බෝග දැනුම',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
+                        const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 18,
                         ),
-                        Text(
-                          'බෝගයක් තෝරා ඒ යටතේ ඇති උපදෙස් බලන්න',
-                          style: TextStyle(fontSize: 13, color: Colors.grey),
-                        ),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(widget.guide.remedy!)),
                       ],
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            const Text(
-              '🌾 බෝග වර්ග',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
-            ),
-            const SizedBox(height: 12),
-
-            // Vegetable Metadata Stream
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('vegetable_metadata')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('බෝග වර්ග නැත'));
-                }
-
-                final vegetables = snapshot.data!.docs;
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: vegetables.length,
-                  itemBuilder: (context, index) {
-                    final doc = vegetables[index];
-                    final data = doc.data() as Map<String, dynamic>;
-                    final vegId = doc.id;
-                    final vegName = data['common_name'] ?? vegId;
-                    final isSelected = _selectedVegetableId == vegId;
-
-                    return Column(
-                      children: [
-                        Card(
-                          elevation: isSelected ? 2 : 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: BorderSide(
-                              color: isSelected ? Colors.green : Colors.grey.shade200,
-                              width: isSelected ? 2 : 1,
-                            ),
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: isSelected ? Colors.green : Colors.grey.shade200,
-                              child: Text(
-                                vegName[0],
-                                style: TextStyle(color: isSelected ? Colors.white : Colors.grey),
-                              ),
-                            ),
-                            title: Text(
-                              vegName,
-                              style: TextStyle(
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                color: isSelected ? Colors.green : Colors.black87,
-                              ),
-                            ),
-                            subtitle: Text('වගා කාලය: ${data['growing_duration_days'] ?? "N/A"} දින'),
-                            trailing: Icon(isSelected ? Icons.expand_less : Icons.chevron_right),
-                            onTap: () {
-                              setState(() {
-                                if (_selectedVegetableId == vegId) {
-                                  _selectedVegetableId = null;
-                                  _expandedGuideId = null;
-                                } else {
-                                  _selectedVegetableId = vegId;
-                                  _expandedGuideId = null;
-                                }
-                              });
-                            },
-                          ),
-                        ),
-
-                        // අලුත් Sub-collection Stream එක මෙතනින් පටන් ගන්නවා
-                        if (isSelected) ...[
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  '📚 උපදෙස් මාලාව',
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orange),
-                                ),
-                                const SizedBox(height: 8),
-
-                                StreamBuilder<QuerySnapshot>(
-                                  // මෙතන තමයි වැදගත්ම වෙනස - Sub-collection එකට path එක දෙන විදිහ
-                                  stream: FirebaseFirestore.instance
-                                      .collection('vegetable_metadata')
-                                      .doc(vegId) // තෝරාගත් බෝගයේ ID එක
-                                      .collection('instructions') // ඒ ඇතුළේ තියෙන sub-collection එක
-                                      .snapshots(),
-                                  builder: (context, guideSnapshot) {
-                                    if (guideSnapshot.connectionState == ConnectionState.waiting) {
-                                      return const Center(child: CircularProgressIndicator());
-                                    }
-                                    if (!guideSnapshot.hasData || guideSnapshot.data!.docs.isEmpty) {
-                                      return const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text('තවම උපදෙස් ඇතුළත් කර නැත'),
-                                      );
-                                    }
-
-                                    final guides = guideSnapshot.data!.docs;
-                                    return ListView.builder(
-                                      shrinkWrap: true,
-                                      physics: const NeverScrollableScrollPhysics(),
-                                      itemCount: guides.length,
-                                      itemBuilder: (context, gIndex) {
-                                        final guideData = guides[gIndex].data() as Map<String, dynamic>;
-                                        final guideId = guides[gIndex].id;
-                                        final isGuideExpanded = _expandedGuideId == guideId;
-
-                                        return Card(
-                                          margin: const EdgeInsets.only(bottom: 8),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                            side: BorderSide(color: Colors.grey.shade100),
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              ListTile(
-                                                leading: Icon(
-                                                  _getCategoryIcon(guideData['category']),
-                                                  color: _getCategoryColor(guideData['category']),
-                                                  size: 20,
-                                                ),
-                                                title: Text(
-                                                  guideData['title'] ?? 'No Title',
-                                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                                                ),
-                                                trailing: Icon(isGuideExpanded ? Icons.expand_less : Icons.expand_more),
-                                                onTap: () {
-                                                  setState(() {
-                                                    _expandedGuideId = isGuideExpanded ? null : guideId;
-                                                  });
-                                                },
-                                              ),
-                                              if (isGuideExpanded)
-                                                Padding(
-                                                  padding: const EdgeInsets.all(12),
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      const Divider(),
-                                                      Text(
-                                                        guideData['description'] ?? '',
-                                                        style: const TextStyle(fontSize: 12),
-                                                      ),
-                                                      const SizedBox(height: 10),
-                                                      if (guideData['remedy'] != null)
-                                                        _buildDetailRow(Icons.check_circle, 'විසඳුම', guideData['remedy'], Colors.green),
-                                                    ],
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-=======
-            const Text(
-              '🌿 බෝගයක් තෝරා උපදෙස් බලන්න',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
-            ),
-            const SizedBox(height: 15),
-
-            // 1. බෝග ලැයිස්තුව ලබා ගැනීම (vegetable_metadata collection)
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('vegetable_metadata').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('බෝග දත්ත තවම ඇතුළත් කර නැත.'));
-                }
-
-                final vegetables = snapshot.data!.docs;
-
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: vegetables.length,
-                  itemBuilder: (context, index) {
-                    final vegDoc = vegetables[index];
-                    final vegData = vegDoc.data() as Map<String, dynamic>;
-                    final String vegId = vegDoc.id;
-                    final isVegSelected = _selectedVegetableId == vegId;
-
-                    return Column(
-                      children: [
-                        // බෝගයේ නම පෙන්වන Card එක
-                        Card(
-                          elevation: isVegSelected ? 4 : 1,
-                          margin: const EdgeInsets.only(bottom: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            side: BorderSide(color: isVegSelected ? Colors.green : Colors.transparent, width: 2),
-                          ),
-                          child: ListTile(
-                            leading: const CircleAvatar(
-                              backgroundColor: Colors.green,
-                              child: Icon(Icons.eco, color: Colors.white, size: 20),
-                            ),
-                            title: Text(
-                              vegData['common_name'] ?? vegId,
-                              style: TextStyle(
-                                fontWeight: isVegSelected ? FontWeight.bold : FontWeight.normal,
-                                color: isVegSelected ? Colors.green.shade900 : Colors.black87,
-                              ),
-                            ),
-                            trailing: Icon(isVegSelected ? Icons.expand_less : Icons.expand_more),
-                            onTap: () {
-                              setState(() {
-                                _selectedVegetableId = isVegSelected ? null : vegId;
-                                _expandedInstructionId = null; // බෝගය මාරු කරද්දී ඇරපු උපදෙස් වහන්න
-                              });
-                            },
-                          ),
-                        ),
-
-                        // 2. උපදෙස් ලැයිස්තුව (Instructions Sub-collection)
-                        if (isVegSelected)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 15, right: 5, bottom: 15),
-                            child: StreamBuilder<QuerySnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('vegetable_metadata')
-                                  .doc(vegId)
-                                  .collection('instructions')
-                                  .snapshots(),
-                              builder: (context, instSnapshot) {
-                                if (instSnapshot.connectionState == ConnectionState.waiting) {
-                                  return const LinearProgressIndicator();
-                                }
-                                if (!instSnapshot.hasData || instSnapshot.data!.docs.isEmpty) {
-                                  return const Text('   ⚠️ මෙම බෝගය සඳහා තවම උපදෙස් ඇතුළත් කර නැත.');
-                                }
-
-                                final instructions = instSnapshot.data!.docs;
-
-                                return ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: instructions.length,
-                                  itemBuilder: (context, iIndex) {
-                                    final instDoc = instructions[iIndex];
-                                    final instData = instDoc.data() as Map<String, dynamic>;
-                                    final instId = instDoc.id;
-                                    final isInstExpanded = _expandedInstructionId == instId;
-
-                                    return Column(
-                                      children: [
-                                        // රෝගයේ/උපදෙසේ නම සහිත කොටස
-                                        ListTile(
-                                          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                                          leading: Icon(
-                                            instData['category'] == 'pest' ? Icons.bug_report : Icons.info_outline,
-                                            color: instData['category'] == 'pest' ? Colors.red : Colors.blue,
-                                          ),
-                                          title: Text(
-                                            instData['title'] ?? 'No Title',
-                                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                                          ),
-                                          trailing: Icon(isInstExpanded ? Icons.remove_circle_outline : Icons.add_circle_outline, color: Colors.orange, size: 20),
-                                          onTap: () {
-                                            setState(() {
-                                              _expandedInstructionId = isInstExpanded ? null : instId;
-                                            });
-                                          },
-                                        ),
-
-                                        // 3. විසඳුම සහ විස්තරය (Instruction Details)
-                                        if (isInstExpanded)
-                                          Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.all(15),
-                                            margin: const EdgeInsets.only(left: 10, bottom: 10),
-                                            decoration: BoxDecoration(
-                                              color: Colors.orange.shade50,
-                                              borderRadius: BorderRadius.circular(10),
-                                              border: Border.all(color: Colors.orange.shade200),
-                                            ),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                const Text('📝 විස්තරය:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                                Text(instData['description'] ?? '', style: const TextStyle(fontSize: 13)),
-                                                const SizedBox(height: 10),
-                                                const Text('✅ විසඳුම:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green)),
-                                                Text(instData['remedy'] ?? '', style: const TextStyle(fontSize: 13, color: Colors.green)),
-                                                const SizedBox(height: 8),
-                                                Align(
-                                                  alignment: Alignment.bottomRight,
-                                                  child: Text('දිනය: ${instData['date'] ?? ""}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        const Divider(height: 1),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
->>>>>>> master
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  // Helper functions
-  IconData _getCategoryIcon(String? cat) {
-    switch (cat?.toLowerCase()) {
-      case 'disease': return Icons.coronavirus;
-      case 'pest': return Icons.bug_report;
-      case 'fertilizer': return Icons.eco;
-      default: return Icons.info;
+  IconData _categoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'disease':
+        return Icons.coronavirus;
+      case 'pest':
+        return Icons.bug_report;
+      case 'fertilizer':
+        return Icons.eco;
+      case 'water':
+        return Icons.water_drop;
+      case 'land':
+        return Icons.landscape;
+      default:
+        return Icons.info;
     }
   }
 
-  Color _getCategoryColor(String? cat) {
-    switch (cat?.toLowerCase()) {
-      case 'disease': return Colors.red;
-      case 'pest': return Colors.orange;
-      case 'fertilizer': return Colors.green;
-      default: return Colors.blue;
+  Color _categoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'disease':
+        return Colors.red;
+      case 'pest':
+        return Colors.orange;
+      case 'fertilizer':
+        return Colors.green;
+      case 'water':
+        return Colors.blue;
+      case 'land':
+        return Colors.brown;
+      default:
+        return Colors.teal;
     }
-  }
-
-  Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 8),
-        Expanded(child: Text('$label: $value', style: TextStyle(fontSize: 12, color: color))),
-      ],
-    );
   }
 }

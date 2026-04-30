@@ -37,10 +37,18 @@ dependencies:
   image_picker: ^1.2.1
   firebase_core: ^4.7.0
   cloud_firestore: ^6.3.0
+  http: ^1.6.0
   intl: ^0.20.2
   provider: ^6.1.5+1
   firebase_storage: ^13.3.0
   firebase_auth: ^6.4.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  connectivity_plus: ^7.1.1
+  uuid: ^4.5.3
+  flutter_localizations:
+    sdk: flutter
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:
@@ -70,7 +78,6 @@ flutter:
     - assets/images/farming1.jpg
     - assets/images/farming2.jpg
     - assets/images/farming3.jpg
-    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

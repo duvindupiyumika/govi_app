@@ -46,9 +46,23 @@ class MarketService {
         .collection('prices')
         .orderBy('vegetableName')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => MarketPrice.fromFirestore(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => MarketPrice.fromFirestore(doc))
+              .toList(),
+        );
+  }
+
+  /// Fetch latest prices once for cache synchronization.
+  Future<List<MarketPrice>> fetchPricesByMarket(String market) async {
+    final snapshot = await _firestore
+        .collection('markets')
+        .doc(market)
+        .collection('prices')
+        .orderBy('vegetableName')
+        .get();
+
+    return snapshot.docs.map((doc) => MarketPrice.fromFirestore(doc)).toList();
   }
 
   /// Add or update a vegetable price in a market
@@ -97,25 +111,22 @@ class MarketService {
 
     // Price variation per market (simulate real differences)
     final marketVariations = {
-      'දඹුල්ල': 0.85,    // Dambulla: wholesale, cheaper
-      'පැල්ල': 1.0,      // Pella: average
-      'මීගොඩ': 1.1,      // Meegoda: slightly higher
-      'රත්මලාන': 1.15,   // Ratmalana: urban, higher
-      'බෝකුන්දර': 1.05,   // Bokundara: slightly above average
-      'නාරහෙන්පිට': 1.2,  // Narahenpita: Colombo, highest
-      'තිස්ස': 0.9,      // Thissa: rural, lower
-      'වේයන්ගොඩ': 0.95,   // Weyangoda: moderate
+      'දඹුල්ල': 0.85, // Dambulla: wholesale, cheaper
+      'පැල්ල': 1.0, // Pella: average
+      'මීගොඩ': 1.1, // Meegoda: slightly higher
+      'රත්මලාන': 1.15, // Ratmalana: urban, higher
+      'බෝකුන්දර': 1.05, // Bokundara: slightly above average
+      'නාරහෙන්පිට': 1.2, // Narahenpita: Colombo, highest
+      'තිස්ස': 0.9, // Thissa: rural, lower
+      'වේයන්ගොඩ': 0.95, // Weyangoda: moderate
       'කැප්පෙටිපොල': 0.88, // Keppetipola: upcountry, lower
-      'තඹුත්තේගම': 0.92,  // Thambuththegama: rural
+      'තඹුත්තේගම': 0.92, // Thambuththegama: rural
     };
 
     for (final market in allMarkets) {
       // Create market document
       final marketDoc = _firestore.collection('markets').doc(market);
-      batch.set(marketDoc, {
-        'name': market,
-        'createdAt': Timestamp.now(),
-      });
+      batch.set(marketDoc, {'name': market, 'createdAt': Timestamp.now()});
 
       final variation = marketVariations[market] ?? 1.0;
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../data/models/market_price_model.dart';
-import '../../data/services/market_service.dart';
+
+import '../../features/market/data/market_price_repository.dart';
+import '../../features/market/domain/cached_market_price.dart';
+
+enum _MarketSyncState { idle, syncing, synced, failed }
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -10,15 +13,41 @@ class MarketScreen extends StatefulWidget {
 }
 
 class _MarketScreenState extends State<MarketScreen> {
-  final MarketService _marketService = MarketService();
-  String _selectedMarket = MarketService.allMarkets[0];
-  String _searchQuery = '';
+  final MarketPriceRepository _marketRepository = MarketPriceRepository();
   final TextEditingController _searchController = TextEditingController();
+
+  late String _selectedMarket;
+  String _searchQuery = '';
+  _MarketSyncState _syncState = _MarketSyncState.idle;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedMarket = _marketRepository.availableMarkets.first;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncSelectedMarket();
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _syncSelectedMarket() async {
+    setState(() {
+      _syncState = _MarketSyncState.syncing;
+    });
+
+    try {
+      await _marketRepository.syncMarketFromFirebase(_selectedMarket);
+      if (!mounted) return;
+      setState(() => _syncState = _MarketSyncState.synced);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _syncState = _MarketSyncState.failed);
+    }
   }
 
   @override
@@ -35,224 +64,44 @@ class _MarketScreenState extends State<MarketScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'යාවත්කාලීන කරන්න',
-            onPressed: () => setState(() {}),
+            onPressed: _syncState == _MarketSyncState.syncing
+                ? null
+                : _syncSelectedMarket,
           ),
         ],
       ),
       body: Column(
         children: [
-          // Header gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.green, Colors.transparent],
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Column(
-              children: [
-                // Search bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.grey[800] : Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) => setState(() => _searchQuery = value),
-                    decoration: InputDecoration(
-                      hintText: 'එළවළුවක් සොයන්න...',
-                      prefixIcon: const Icon(Icons.search, color: Colors.green),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Market tabs
-          SizedBox(
-            height: 50,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              itemCount: MarketService.allMarkets.length,
-              itemBuilder: (context, index) {
-                final market = MarketService.allMarkets[index];
-                final isSelected = market == _selectedMarket;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ChoiceChip(
-                    label: Text(
-                      market,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : null,
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                    selected: isSelected,
-                    selectedColor: Colors.green,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedMarket = market);
-                      }
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Selected market label
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                const Icon(Icons.store, color: Colors.green, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '$_selectedMarket වෙළඳපොළ',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.circle, color: Colors.green, size: 8),
-                      SizedBox(width: 4),
-                      Text(
-                        'සජීවී',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
+          _buildHeader(isDark),
+          _buildMarketTabs(),
+          _buildMarketStatus(),
           const Divider(height: 1),
-
-          // Price list
           Expanded(
-            child: StreamBuilder<List<MarketPrice>>(
-              stream: _marketService.streamPricesByMarket(_selectedMarket),
+            child: StreamBuilder<List<CachedMarketPrice>>(
+              stream: _marketRepository.watchPricesByMarket(_selectedMarket),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(color: Colors.green),
-                        SizedBox(height: 16),
-                        Text('මිල ගණන් පූරණය වේ...'),
-                      ],
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline,
-                            size: 48, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text('දෝෂයකි: ${snapshot.error}'),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () => setState(() {}),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('නැවත උත්සාහ කරන්න'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final prices = snapshot.data ?? [];
-
-                // Filter by search
-                final filtered = _searchQuery.isEmpty
-                    ? prices
-                    : prices
-                        .where((p) =>
-                            p.vegetableName
-                                .toLowerCase()
-                                .contains(_searchQuery.toLowerCase()) ||
-                            p.vegetableNameEn
-                                .toLowerCase()
-                                .contains(_searchQuery.toLowerCase()))
-                        .toList();
+                final prices =
+                    snapshot.data ??
+                    _marketRepository.pricesByMarket(_selectedMarket);
+                final filtered = _filterPrices(prices);
 
                 if (filtered.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.inbox_rounded,
-                            size: 64,
-                            color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          prices.isEmpty
-                              ? 'දත්ත නැත.\n"+" බොත්තම ඔබා දත්ත එකතු කරන්න.'
-                              : 'සෙවුමට ගැළපෙන ප්‍රතිඵල නැත.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
+                  return _EmptyMarketState(
+                    hasCachedData: prices.isNotEmpty,
+                    isSyncing: _syncState == _MarketSyncState.syncing,
+                    onRetry: _syncSelectedMarket,
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.only(top: 8, bottom: 16),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final item = filtered[index];
-                    return _buildPriceCard(item, isDark);
-                  },
+                return RefreshIndicator(
+                  onRefresh: _syncSelectedMarket,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      return _PriceCard(item: filtered[index]);
+                    },
+                  ),
                 );
               },
             ),
@@ -262,96 +111,303 @@ class _MarketScreenState extends State<MarketScreen> {
     );
   }
 
-  Widget _buildPriceCard(MarketPrice item, bool isDark) {
-    // Assign a color based on the vegetable name for variety
-    final colorIndex =
-        item.vegetableNameEn.hashCode % _vegColors.length;
-    final vegColor = _vegColors[colorIndex.abs()];
+  Widget _buildHeader(bool isDark) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.green, Colors.transparent],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) => setState(() => _searchQuery = value),
+          decoration: InputDecoration(
+            hintText: 'එළවළුවක් සොයන්න...',
+            prefixIcon: const Icon(Icons.search, color: Colors.green),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 15,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarketTabs() {
+    return SizedBox(
+      height: 50,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: _marketRepository.availableMarkets.length,
+        itemBuilder: (context, index) {
+          final market = _marketRepository.availableMarkets[index];
+          final isSelected = market == _selectedMarket;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: ChoiceChip(
+              label: Text(
+                market,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : null,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: Colors.green,
+              onSelected: (selected) {
+                if (!selected) return;
+                setState(() => _selectedMarket = market);
+                _syncSelectedMarket();
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMarketStatus() {
+    final lastUpdated = _marketRepository.lastUpdatedForMarket(_selectedMarket);
+    final isStale = _marketRepository.isStale(_selectedMarket);
+
+    Color color;
+    String label;
+    IconData icon;
+
+    if (_syncState == _MarketSyncState.syncing) {
+      color = Colors.blue;
+      label = 'Syncing...';
+      icon = Icons.sync;
+    } else if (_syncState == _MarketSyncState.failed) {
+      color = lastUpdated == null ? Colors.red : Colors.orange;
+      label = lastUpdated == null ? 'Offline - no cache' : 'Offline cache';
+      icon = Icons.cloud_off;
+    } else if (lastUpdated == null) {
+      color = Colors.grey;
+      label = 'No cached data';
+      icon = Icons.inbox;
+    } else if (isStale) {
+      color = Colors.orange;
+      label = 'Cached - stale';
+      icon = Icons.history;
+    } else {
+      color = Colors.green;
+      label = 'Cached - fresh';
+      icon = Icons.check_circle;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.store, color: Colors.green, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$_selectedMarket වෙළඳපොළ',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: 13),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<CachedMarketPrice> _filterPrices(List<CachedMarketPrice> prices) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return prices;
+
+    return prices
+        .where(
+          (price) =>
+              price.cropName.toLowerCase().contains(query) ||
+              price.cropNameSinhala.toLowerCase().contains(query),
+        )
+        .toList();
+  }
+}
+
+class _EmptyMarketState extends StatelessWidget {
+  final bool hasCachedData;
+  final bool isSyncing;
+  final VoidCallback onRetry;
+
+  const _EmptyMarketState({
+    required this.hasCachedData,
+    required this.isSyncing,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.storefront, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              hasCachedData
+                  ? 'සෙවුමට ගැළපෙන ප්‍රතිඵල නැත.'
+                  : 'තවම මිල දත්ත නොමැත.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            if (isSyncing)
+              const CircularProgressIndicator(color: Colors.green)
+            else
+              ElevatedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Sync prices'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PriceCard extends StatelessWidget {
+  final CachedMarketPrice item;
+
+  const _PriceCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final vegColor =
+        _vegColors[(item.cropName.hashCode % _vegColors.length).abs()];
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {},
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              // Vegetable icon
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: vegColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    item.vegetableName.isNotEmpty
-                        ? item.vegetableName[0]
-                        : '?',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: vegColor,
-                    ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: vegColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(
+                  item.cropNameSinhala.isNotEmpty
+                      ? item.cropNameSinhala[0]
+                      : '?',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: vegColor,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-
-              // Name
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.vegetableName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.vegetableNameEn,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Price
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'රු. ${item.price.toStringAsFixed(0)}',
+                    item.cropNameSinhala,
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
-                    '/${item.unit}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
+                    item.cropName,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Updated ${_formatDate(item.updatedAt)}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'රු. ${item.price.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                Text(
+                  '/${item.unit}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   static const List<Color> _vegColors = [

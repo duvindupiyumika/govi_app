@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // 🔥 Firestore import එක අනිවාර්යයි
+
+import '../../features/tracking/data/crop_plan_repository.dart';
+import '../../features/tracking/domain/crop_lifecycle_service.dart';
+import '../../features/tracking/domain/crop_plan.dart';
+import 'add_crop_screen.dart';
 import 'crop_detail_screen.dart';
 
 class TrackingScreen extends StatelessWidget {
@@ -7,97 +11,194 @@ class TrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final planRepository = CropPlanRepository();
+    final lifecycleService = CropLifecycleService();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Crops'),
-        backgroundColor: const Color(0xFF2E7D32), // ගොවි ඇප් එකට ගැලපෙන කොළ පාට
+        backgroundColor: const Color(0xFF2E7D32),
+        foregroundColor: Colors.white,
       ),
-      // 🔥 StreamBuilder පාවිච්චි කරන්නේ Firebase එකේ දත්ත වෙනස් වුණ ගමන් App එකේ ඉබේම පේන්නයි
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('crops').snapshots(),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF2E7D32),
+        foregroundColor: Colors.white,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddCropScreen()),
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Add Crop'),
+      ),
+      body: StreamBuilder<List<CropPlan>>(
+        stream: planRepository.watchAll(),
         builder: (context, snapshot) {
-          // 1. Error එකක් ආවොත් පෙන්වන විදිහ
-          if (snapshot.hasError) {
-            return const Center(child: Text('Something went wrong! ❌'));
+          final plans = snapshot.data ?? planRepository.getAll();
+
+          if (plans.isEmpty) {
+            return _EmptyTrackingState(
+              onAddCrop: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddCropScreen(),
+                  ),
+                );
+              },
+            );
           }
 
-          // 2. Data ටික ලෝඩ් වෙනකම් Loading එකක් පෙන්වනවා
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.green));
-          }
-
-          // 3. Firestore එකෙන් එන දත්ත ටික List එකකට ගන්නවා
-          final docs = snapshot.data!.docs;
-
-          // දත්ත කිසිවක් නැතිනම් (Collection එක හිස් නම්)
-          if (docs.isEmpty) {
-            return const Center(child: Text('No crops found. Add some in Firebase! 🌱'));
-          }
+          plans.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: docs.length,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            itemCount: plans.length,
             itemBuilder: (context, index) {
-              // එක Document එකක දත්ත Map එකක් විදිහට ගන්නවා
-              final crop = docs[index].data() as Map<String, dynamic>;
+              final plan = plans[index];
+              final progress = lifecycleService.progressFor(
+                plan,
+                DateTime.now(),
+              );
+              final percent = (progress * 100).round();
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
                 elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.green[100],
-                    child: Text(
-                      crop['name'] != null ? crop['name'][0] : '?',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-                    ),
-                  ),
-                  title: Text(
-                    crop['name'] ?? 'Unknown Crop',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Planted: ${crop['planted'] ?? 'N/A'}'),
-                      Text('Expected: ${crop['expectedYield'] ?? '0'} kg'),
-                      Text('Harvest: ${crop['harvest'] ?? 'N/A'}'),
-                      // Alerts (Firestore එකේ Array එකක් විදිහට තිබ්බොත් විතරක් පෙන්වන්න)
-                      if (crop['alerts'] != null && (crop['alerts'] as List).isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.warning, color: Colors.red, size: 16),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  crop['alerts'][0],
-                                  style: const TextStyle(color: Colors.red, fontSize: 12),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
                   onTap: () {
-                    // 🔥 මෙතනදී තමයි Detail Screen එකට දත්ත ටික පාස් වෙන්නේ
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CropDetailScreen(crop: crop),
+                        builder: (context) => CropDetailScreen(plan: plan),
                       ),
                     );
                   },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: Colors.green[100],
+                              child: Text(
+                                plan.cropName.isEmpty ? '?' : plan.cropName[0],
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    plan.cropName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17,
+                                    ),
+                                  ),
+                                  Text(
+                                    plan.location,
+                                    style: TextStyle(color: Colors.grey[600]),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              '$percent%',
+                              style: const TextStyle(
+                                color: Color(0xFF2E7D32),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 10,
+                            backgroundColor: Colors.grey[200],
+                            valueColor: const AlwaysStoppedAnimation(
+                              Color(0xFF2E7D32),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Harvest: ${_formatDate(plan.expectedHarvestDate)}',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        if (plan.expectedYieldKg != null)
+                          Text(
+                            'Expected yield: ${plan.expectedYieldKg!.toStringAsFixed(0)} kg',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
           );
         },
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+}
+
+class _EmptyTrackingState extends StatelessWidget {
+  final VoidCallback onAddCrop;
+
+  const _EmptyTrackingState({required this.onAddCrop});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.eco_outlined, size: 80, color: Colors.green[300]),
+            const SizedBox(height: 16),
+            const Text(
+              'No crops tracked yet',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Add your first crop when you are ready. GOVI will build a harvest timeline and task list locally.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: onAddCrop,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Crop'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2E7D32),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
