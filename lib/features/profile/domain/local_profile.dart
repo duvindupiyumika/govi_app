@@ -23,6 +23,16 @@ class LocalProfile {
     required this.updatedAt,
   });
 
+  factory LocalProfile.empty() {
+    return LocalProfile(
+      id: 'local',
+      name: 'Farmer',
+      languageCode: 'si',
+      themeMode: 'light',
+      updatedAt: DateTime.now(),
+    );
+  }
+
   factory LocalProfile.fromJson(Map<String, dynamic> json) {
     return LocalProfile(
       id: json['id'] as String,
@@ -51,5 +61,30 @@ class LocalProfile {
       'profileImagePath': profileImagePath,
       'updatedAt': updatedAt.toIso8601String(),
     };
+  }
+
+  LocalProfile copyWith({
+    String? name,
+    String? email,
+    String? phoneNumber,
+    String? location,
+    double? landSize,
+    String? languageCode,
+    String? themeMode,
+    String? profileImagePath,
+    DateTime? updatedAt,
+  }) {
+    return LocalProfile(
+      id: id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      location: location ?? this.location,
+      landSize: landSize ?? this.landSize,
+      languageCode: languageCode ?? this.languageCode,
+      themeMode: themeMode ?? this.themeMode,
+      profileImagePath: profileImagePath ?? this.profileImagePath,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/storage/local_storage_service.dart';
 import 'screens/profile/theme_provider.dart';
@@ -56,6 +57,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Smart Agriculture',
       debugShowCheckedModeBanner: false,
+      locale: themeProvider.locale,
+      supportedLocales: const [Locale('en'), Locale('ta')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
       themeMode: themeProvider.themeMode,
       theme: MyThemes.lightTheme,
       darkTheme: MyThemes.darkTheme,

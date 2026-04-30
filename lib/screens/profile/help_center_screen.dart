@@ -7,11 +7,11 @@ class HelpCenterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     const Color primaryEmerald = Color(0xFF0F5238);
     const Color backgroundSurface = Color(0xFFF6F9FF);
-    const Color searchBarColor = Color(0xFFF0FDF4); 
+    const Color searchBarColor = Color(0xFFF0FDF4);
 
     return Scaffold(
       backgroundColor: backgroundSurface,
-      
+
       // --- Top App Bar ---
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -30,7 +30,7 @@ class HelpCenterScreen extends StatelessWidget {
         ),
         surfaceTintColor: Colors.transparent,
       ),
-      
+
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -56,10 +56,10 @@ class HelpCenterScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   Container(
                     decoration: BoxDecoration(
-                      color: searchBarColor, 
+                      color: searchBarColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const TextField(
@@ -81,7 +81,6 @@ class HelpCenterScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  
                   // --- Contact Us Section ---
                   const Padding(
                     padding: EdgeInsets.only(left: 4, bottom: 12),
@@ -103,10 +102,30 @@ class HelpCenterScreen extends StatelessWidget {
                     mainAxisSpacing: 12,
                     childAspectRatio: 1.3,
                     children: [
-                      _buildContactCard(Icons.chat, "WhatsApp", const Color(0xFFD1FAE5), const Color(0xFF059669)),
-                      _buildContactCard(Icons.call, "Call Now", const Color(0xFFDBEAFE), const Color(0xFF2563EB)),
-                      _buildContactCard(Icons.email, "Email Us", const Color(0xFFFFEDD5), const Color(0xFFEA580C)),
-                      _buildContactCard(Icons.language, "Website", const Color(0xFFCCFBF1), const Color(0xFF0D9488)),
+                      _buildContactCard(
+                        Icons.chat,
+                        "WhatsApp",
+                        const Color(0xFFD1FAE5),
+                        const Color(0xFF059669),
+                      ),
+                      _buildContactCard(
+                        Icons.call,
+                        "Call Now",
+                        const Color(0xFFDBEAFE),
+                        const Color(0xFF2563EB),
+                      ),
+                      _buildContactCard(
+                        Icons.email,
+                        "Email Us",
+                        const Color(0xFFFFEDD5),
+                        const Color(0xFFEA580C),
+                      ),
+                      _buildContactCard(
+                        Icons.language,
+                        "Website",
+                        const Color(0xFFCCFBF1),
+                        const Color(0xFF0D9488),
+                      ),
                     ],
                   ),
 
@@ -118,19 +137,38 @@ class HelpCenterScreen extends StatelessWidget {
                     children: [
                       const Text(
                         "FREQUENTLY ASKED QUESTIONS",
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey,
+                        ),
                       ),
                       TextButton(
                         onPressed: () {},
-                        child: const Text("View All", style: TextStyle(color: primaryEmerald, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          "View All",
+                          style: TextStyle(
+                            color: primaryEmerald,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   _buildFAQItem(Icons.eco, "How do I track my crop growth?"),
-                  _buildFAQItem(Icons.psychology, "How does the AI advisor work?"),
-                  _buildFAQItem(Icons.shopping_cart, "Can I sell my produce on Market?"),
-                  _buildFAQItem(Icons.history_edu, "Where can I find learning resources?"),
+                  _buildFAQItem(
+                    Icons.psychology,
+                    "How does the AI advisor work?",
+                  ),
+                  _buildFAQItem(
+                    Icons.shopping_cart,
+                    "Can I sell my produce on Market?",
+                  ),
+                  _buildFAQItem(
+                    Icons.history_edu,
+                    "Where can I find learning resources?",
+                  ),
 
                   const SizedBox(height: 32),
 
@@ -147,7 +185,11 @@ class HelpCenterScreen extends StatelessWidget {
                       children: [
                         const Text(
                           "Need 24/7 Technical Support?",
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         const Text(
@@ -160,14 +202,16 @@ class HelpCenterScreen extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: primaryEmerald,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                           ),
                           child: const Text("Upgrade Now"),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 100), 
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -179,14 +223,23 @@ class HelpCenterScreen extends StatelessWidget {
 
   // --- Helper Widgets ---
 
-  Widget _buildContactCard(IconData icon, String title, Color bgColor, Color iconColor) {
+  Widget _buildContactCard(
+    IconData icon,
+    String title,
+    Color bgColor,
+    Color iconColor,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.withOpacity(0.1)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -198,7 +251,10 @@ class HelpCenterScreen extends StatelessWidget {
             child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
         ],
       ),
     );
@@ -214,7 +270,10 @@ class HelpCenterScreen extends StatelessWidget {
       ),
       child: ListTile(
         leading: Icon(icon, color: const Color(0xFF0F5238)),
-        title: Text(question, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        title: Text(
+          question,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
         trailing: const Icon(Icons.expand_more, color: Colors.grey),
         onTap: () {},
       ),
