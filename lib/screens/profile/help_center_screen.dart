@@ -162,8 +162,8 @@ class HelpCenterScreen extends StatelessWidget {
                     "How does the AI advisor work?",
                   ),
                   _buildFAQItem(
-                    Icons.shopping_cart,
-                    "Can I sell my produce on Market?",
+                    Icons.storefront,
+                    "How do I read market price updates?",
                   ),
                   _buildFAQItem(
                     Icons.history_edu,
@@ -193,7 +193,7 @@ class HelpCenterScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          "Our enterprise partners get dedicated account managers and priority support.",
+                          "Contact support for setup help, bug reports, and farming app guidance.",
                           style: TextStyle(color: Colors.white70, fontSize: 13),
                         ),
                         const SizedBox(height: 16),
@@ -206,7 +206,7 @@ class HelpCenterScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),
-                          child: const Text("Upgrade Now"),
+                          child: const Text("Contact Support"),
                         ),
                       ],
                     ),
@@ -233,10 +233,10 @@ class HelpCenterScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -266,7 +266,7 @@ class HelpCenterScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: ListTile(
         leading: Icon(icon, color: const Color(0xFF0F5238)),

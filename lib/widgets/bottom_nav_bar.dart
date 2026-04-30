@@ -20,7 +20,9 @@ class BottomNavBar extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             // 🔥 Dark mode එකේදී shadow එක ඕනෑවට වඩා තදට පේන්නේ නැති වෙන්න හැදුවා
-            color: isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.2),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, -3),
@@ -35,7 +37,10 @@ class BottomNavBar extends StatelessWidget {
         backgroundColor: theme.colorScheme.surface,
         selectedItemColor: const Color(0xFF2E7D32),
         unselectedItemColor: isDark ? Colors.white38 : Colors.grey[600],
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 11,
+        ),
         unselectedLabelStyle: const TextStyle(fontSize: 11),
         items: const [
           BottomNavigationBarItem(
@@ -51,7 +56,7 @@ class BottomNavBar extends StatelessWidget {
             label: 'AI',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart, size: 24),
+            icon: Icon(Icons.storefront, size: 24),
             label: 'Market',
           ),
           BottomNavigationBarItem(
