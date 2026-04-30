@@ -46,4 +46,21 @@ class ChatMessage {
       'createdAt': createdAt.toIso8601String(),
     };
   }
+
+  ChatMessage copyWith({
+    String? text,
+    String? languageCode,
+    ChatMessageStatus? status,
+    DateTime? createdAt,
+  }) {
+    return ChatMessage(
+      id: id,
+      conversationId: conversationId,
+      role: role,
+      text: text ?? this.text,
+      languageCode: languageCode ?? this.languageCode,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

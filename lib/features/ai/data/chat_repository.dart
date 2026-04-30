@@ -10,4 +10,24 @@ class ChatRepository extends JsonBoxRepository<ChatMessage> {
         fromJson: ChatMessage.fromJson,
         toJson: (message) => message.toJson(),
       );
+
+  List<ChatMessage> messagesForConversation(String conversationId) {
+    final messages =
+        getAll()
+            .where((message) => message.conversationId == conversationId)
+            .toList()
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return messages;
+  }
+
+  Stream<List<ChatMessage>> watchConversation(String conversationId) {
+    return watchAll().map((messages) {
+      final filtered =
+          messages
+              .where((message) => message.conversationId == conversationId)
+              .toList()
+            ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      return filtered;
+    });
+  }
 }
