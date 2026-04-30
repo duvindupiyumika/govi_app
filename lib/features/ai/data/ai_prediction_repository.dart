@@ -10,4 +10,11 @@ class AiPredictionRepository extends JsonBoxRepository<AiPrediction> {
         fromJson: AiPrediction.fromJson,
         toJson: (prediction) => prediction.toJson(),
       );
+
+  AiPrediction? latestByType(String type) {
+    final predictions = getAll().where((item) => item.type == type).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    return predictions.isEmpty ? null : predictions.first;
+  }
 }
