@@ -2,7 +2,7 @@ class OnboardingProfile {
   final String id;
   final String languageCode;
   final String name;
-  final String farmerType;
+  final String? farmerType;
   final String location;
   final double? latitude;
   final double? longitude;
@@ -12,6 +12,9 @@ class OnboardingProfile {
   final String? activeCrop;
   final DateTime? startDate;
   final List<String> marketPreferences;
+
+  /// `known_crop` = user enters crop tracking details; `crop_help` = guided to AI suggestion.
+  final String? plantingJourney;
   final bool isComplete;
   final DateTime updatedAt;
 
@@ -19,8 +22,8 @@ class OnboardingProfile {
     required this.id,
     required this.languageCode,
     required this.name,
-    required this.farmerType,
-    required this.location,
+    this.farmerType,
+    this.location = '',
     this.latitude,
     this.longitude,
     this.landSize,
@@ -29,6 +32,7 @@ class OnboardingProfile {
     this.activeCrop,
     this.startDate,
     this.marketPreferences = const [],
+    this.plantingJourney,
     required this.isComplete,
     required this.updatedAt,
   });
@@ -38,7 +42,7 @@ class OnboardingProfile {
       id: json['id'] as String,
       languageCode: json['languageCode'] as String? ?? 'si',
       name: json['name'] as String? ?? 'Farmer',
-      farmerType: json['farmerType'] as String? ?? 'first_time',
+      farmerType: json['farmerType'] as String?,
       location: json['location'] as String? ?? '',
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
@@ -52,6 +56,7 @@ class OnboardingProfile {
       marketPreferences: List<String>.from(
         json['marketPreferences'] as List? ?? [],
       ),
+      plantingJourney: json['plantingJourney'] as String?,
       isComplete: json['isComplete'] as bool? ?? false,
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -72,6 +77,7 @@ class OnboardingProfile {
       'activeCrop': activeCrop,
       'startDate': startDate?.toIso8601String(),
       'marketPreferences': marketPreferences,
+      'plantingJourney': plantingJourney,
       'isComplete': isComplete,
       'updatedAt': updatedAt.toIso8601String(),
     };

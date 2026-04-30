@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/app_localizations_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../features/tracking/data/crop_activity_repository.dart';
 import '../../features/tracking/data/crop_plan_repository.dart';
 import '../../features/tracking/data/crop_task_repository.dart';
@@ -24,6 +26,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final profile = context.watch<ThemeProvider>().profile;
     final planRepository = CropPlanRepository();
     final activityRepository = CropActivityRepository();
@@ -41,14 +44,14 @@ class HomeScreen extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
-                    child: _buildHeader(context, profile.name),
+                    child: _buildHeader(context, l10n, profile.name),
                   ),
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: plans.isEmpty
-                        ? _buildEmptyCropCard(context)
+                        ? _buildEmptyCropCard(context, l10n)
                         : _ActiveCropCarousel(plans: plans),
                   ),
                 ),
@@ -56,7 +59,7 @@ class HomeScreen extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
                     child: Text(
-                      'Quick Actions',
+                      l10n.homeQuickActions,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -78,25 +81,25 @@ class HomeScreen extends StatelessWidget {
                     delegate: SliverChildListDelegate([
                       _QuickActionCard(
                         icon: Icons.add_circle_outline,
-                        title: 'Add Crop',
+                        title: l10n.homeQuickActionAddCrop,
                         color: Colors.green,
                         onTap: () => _openAddCrop(context),
                       ),
                       _QuickActionCard(
                         icon: Icons.psychology,
-                        title: 'Ask GOVI AI',
+                        title: l10n.homeQuickActionAskAi,
                         color: Colors.teal,
                         onTap: () => onNavigate(2),
                       ),
                       _QuickActionCard(
                         icon: Icons.storefront,
-                        title: 'Market Prices',
+                        title: l10n.homeQuickActionMarketPrices,
                         color: Colors.blue,
                         onTap: () => onNavigate(3),
                       ),
                       _QuickActionCard(
                         icon: Icons.menu_book,
-                        title: 'Learn',
+                        title: l10n.homeQuickActionLearn,
                         color: Colors.orange,
                         onTap: () => onNavigate(4),
                       ),
@@ -107,7 +110,7 @@ class HomeScreen extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
                     child: Text(
-                      'Recent Activities',
+                      l10n.homeRecentActivities,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -127,10 +130,10 @@ class HomeScreen extends StatelessWidget {
                     final visible = activities.take(5).toList();
 
                     if (visible.isEmpty) {
-                      return const SliverToBoxAdapter(
+                      return SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Text('No recent activity yet.'),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Text(l10n.homeNoRecentActivityYet),
                         ),
                       );
                     }
@@ -145,7 +148,8 @@ class HomeScreen extends StatelessWidget {
                             child: Icon(Icons.check, color: Colors.green),
                           ),
                           title: Text(activity.title),
-                          subtitle: Text(_relativeDate(activity.createdAt)),
+                          subtitle: Text(
+                              _relativeDate(activity.createdAt, l10n)),
                         );
                       },
                     );
@@ -160,7 +164,8 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, String farmerName) {
+  Widget _buildHeader(
+      BuildContext context, AppLocalizations l10n, String farmerName) {
     return Row(
       children: [
         Expanded(
@@ -168,7 +173,7 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _greeting(),
+                _greeting(l10n),
                 style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
               const SizedBox(height: 4),
@@ -191,7 +196,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyCropCard(BuildContext context) {
+  Widget _buildEmptyCropCard(BuildContext context, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -206,19 +211,17 @@ class HomeScreen extends StatelessWidget {
         children: [
           const Icon(Icons.eco, color: Color(0xFF2E7D32), size: 42),
           const SizedBox(height: 14),
-          const Text(
-            'Start tracking your first crop',
+          Text(
+            l10n.homeEmptyCropTitle,
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Add a crop when you are ready. GOVI will create a harvest progress tracker and timeline tasks.',
-          ),
+          Text(l10n.homeEmptyCropDescription),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () => _openAddCrop(context),
             icon: const Icon(Icons.add),
-            label: const Text('Add Crop'),
+            label: Text(l10n.homeEmptyAddCropCta),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E7D32),
               foregroundColor: Colors.white,
@@ -236,19 +239,25 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  String _greeting() {
+  String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'සුභ උදෑසනක්';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return l10n.homeGreetingMorning;
+    if (hour < 17) return l10n.homeGreetingAfternoon;
+    return l10n.homeGreetingEvening;
   }
 
-  String _relativeDate(DateTime date) {
+  String _relativeDate(DateTime date, AppLocalizations l10n) {
     final difference = DateTime.now().difference(date);
-    if (difference.inDays > 0) return '${difference.inDays} days ago';
-    if (difference.inHours > 0) return '${difference.inHours} hours ago';
-    if (difference.inMinutes > 0) return '${difference.inMinutes} minutes ago';
-    return 'Just now';
+    if (difference.inDays > 0) {
+      return l10n.homeRelativeDaysAgo(difference.inDays);
+    }
+    if (difference.inHours > 0) {
+      return l10n.homeRelativeHoursAgo(difference.inHours);
+    }
+    if (difference.inMinutes > 0) {
+      return l10n.homeRelativeMinutesAgo(difference.inMinutes);
+    }
+    return l10n.homeJustNow;
   }
 }
 
@@ -282,6 +291,7 @@ class _ActiveCropCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final lifecycleService = CropLifecycleService();
     final taskRepository = CropTaskRepository();
     final progress = lifecycleService.progressFor(plan, DateTime.now());
@@ -341,7 +351,7 @@ class _ActiveCropCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              'Harvest ${_formatDate(plan.expectedHarvestDate)}',
+              l10n.homeHarvestOn(_formatDate(plan.expectedHarvestDate)),
               style: const TextStyle(color: Colors.white70),
             ),
             const Spacer(),
@@ -360,8 +370,8 @@ class _ActiveCropCard extends StatelessWidget {
 
                 return Text(
                   tasks.isEmpty
-                      ? 'All tasks done'
-                      : 'Next: ${tasks.first.title}',
+                      ? l10n.homeAllTasksDone
+                      : l10n.homeNextTask(tasks.first.title),
                   style: const TextStyle(color: Colors.white),
                   overflow: TextOverflow.ellipsis,
                 );

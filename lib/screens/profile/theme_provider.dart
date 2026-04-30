@@ -26,8 +26,16 @@ class ThemeProvider extends ChangeNotifier {
 
   bool get isDarkMode => themeMode == ThemeMode.dark;
   String get languageCode => _settings.languageCode;
-  Locale get locale =>
-      languageCode == 'ta' ? const Locale('ta') : const Locale('en');
+  Locale get locale {
+    switch (languageCode) {
+      case 'ta':
+        return const Locale('ta');
+      case 'si':
+        return const Locale('si');
+      default:
+        return const Locale('en');
+    }
+  }
   bool get onboardingComplete => _settings.onboardingComplete;
   LocalProfile get profile => _profile;
 

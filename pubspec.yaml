@@ -49,6 +49,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   geolocator: ^14.0.2
+  flutter_native_splash: ^2.4.4
 
 dev_dependencies:
   flutter_test:
@@ -60,6 +61,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -70,6 +72,7 @@ flutter:
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
+  generate: true
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
@@ -78,6 +81,7 @@ flutter:
     - assets/images/farming1.jpg
     - assets/images/farming2.jpg
     - assets/images/farming3.jpg
+    - assets/branding/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -104,3 +108,28 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Regenerate launcher + native splash assets after branding changes:
+#   dart run flutter_launcher_icons
+#   dart run flutter_native_splash:create
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+  windows:
+    generate: true
+  image_path: assets/branding/govi-icon.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/branding/govi-icon.png
+
+flutter_native_splash:
+  color: "#F4FAF5"
+  image: assets/branding/govi-logo.png
+  android_gravity: center
+  ios_content_mode: scaleAspectFit
+  web: true
+  android_12:
+    image: assets/branding/govi-logo.png
+    color: "#F4FAF5"
