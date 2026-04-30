@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:provider/provider.dart';
 import 'core/storage/local_storage_service.dart';
+import 'l10n/app_localizations_context.dart';
+import 'l10n/generated/app_localizations.dart';
 import 'screens/profile/theme_provider.dart';
 import 'firebase_options.dart';
 import 'screens/home/home_screen.dart';
@@ -17,7 +20,8 @@ import 'widgets/bottom_nav_bar.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   var firebaseInitialized = false;
 
   await LocalStorageService.initialize();
@@ -41,26 +45,40 @@ Future<void> main() async {
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeProvider(),
-      child: MyApp(firebaseInitialized: firebaseInitialized),
+      child: GovAppBootstrap(firebaseInitialized: firebaseInitialized),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
+class GovAppBootstrap extends StatefulWidget {
   final bool firebaseInitialized;
 
-  const MyApp({super.key, this.firebaseInitialized = true});
+  const GovAppBootstrap({super.key, required this.firebaseInitialized});
+
+  @override
+  State<GovAppBootstrap> createState() => _GovAppBootstrapState();
+}
+
+class _GovAppBootstrapState extends State<GovAppBootstrap> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    final themeProvider = context.watch<ThemeProvider>();
 
     return MaterialApp(
-      title: 'Smart Agriculture',
+      title: context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
       locale: themeProvider.locale,
-      supportedLocales: const [Locale('en'), Locale('ta')],
+      supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -68,7 +86,7 @@ class MyApp extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       theme: MyThemes.lightTheme,
       darkTheme: MyThemes.darkTheme,
-      home: firebaseInitialized
+      home: widget.firebaseInitialized
           ? (themeProvider.onboardingComplete
                 ? const MainScreen()
                 : const OnboardingFlowScreen())
@@ -82,12 +100,12 @@ class StartupErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
-            'GOVI could not connect to Firebase. Please check configuration and try again.',
+            context.l10n.startupFirebaseError,
             textAlign: TextAlign.center,
           ),
         ),

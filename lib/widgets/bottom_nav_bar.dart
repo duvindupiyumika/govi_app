@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations_context.dart';
+
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -14,6 +16,7 @@ class BottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
 
     return Container(
       decoration: BoxDecoration(
@@ -42,30 +45,30 @@ class BottomNavBar extends StatelessWidget {
           fontSize: 11,
         ),
         unselectedLabelStyle: const TextStyle(fontSize: 11),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home, size: 24),
-            label: 'Home',
+            icon: const Icon(Icons.home, size: 24),
+            label: l10n.navHome,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.track_changes, size: 24),
-            label: 'Track',
+            icon: const Icon(Icons.track_changes, size: 24),
+            label: l10n.navTrack,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.lightbulb, size: 24),
-            label: 'AI',
+            icon: const Icon(Icons.lightbulb, size: 24),
+            label: l10n.navAi,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.storefront, size: 24),
-            label: 'Market',
+            icon: const Icon(Icons.storefront, size: 24),
+            label: l10n.navMarket,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book, size: 24),
-            label: 'Learn',
+            icon: const Icon(Icons.menu_book, size: 24),
+            label: l10n.navLearn,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person, size: 24),
-            label: 'Profile',
+            icon: const Icon(Icons.person, size: 24),
+            label: l10n.navProfile,
           ),
         ],
       ),

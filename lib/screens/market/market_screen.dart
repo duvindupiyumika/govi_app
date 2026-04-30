@@ -1,6 +1,9 @@
+import 'package:characters/characters.dart';
 import 'package:flutter/material.dart';
 
 import '../../features/market/data/market_price_repository.dart';
+import '../../l10n/app_localizations_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../features/market/domain/cached_market_price.dart';
 
 enum _MarketSyncState { idle, syncing, synced, failed }
@@ -52,18 +55,19 @@ class _MarketScreenState extends State<MarketScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('මිල ගණන්'),
+        title: Text(l10n.marketScreenTitle),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'යාවත්කාලීන කරන්න',
+            tooltip: l10n.marketRefreshTooltip,
             onPressed: _syncState == _MarketSyncState.syncing
                 ? null
                 : _syncSelectedMarket,
@@ -72,9 +76,9 @@ class _MarketScreenState extends State<MarketScreen> {
       ),
       body: Column(
         children: [
-          _buildHeader(isDark),
+          _buildHeader(context, l10n, isDark),
           _buildMarketTabs(),
-          _buildMarketStatus(),
+          _buildMarketStatus(l10n),
           const Divider(height: 1),
           Expanded(
             child: StreamBuilder<List<CachedMarketPrice>>(
@@ -87,6 +91,7 @@ class _MarketScreenState extends State<MarketScreen> {
 
                 if (filtered.isEmpty) {
                   return _EmptyMarketState(
+                    l10n: l10n,
                     hasCachedData: prices.isNotEmpty,
                     isSyncing: _syncState == _MarketSyncState.syncing,
                     onRetry: _syncSelectedMarket,
@@ -99,7 +104,7 @@ class _MarketScreenState extends State<MarketScreen> {
                     padding: const EdgeInsets.only(top: 8, bottom: 16),
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
-                      return _PriceCard(item: filtered[index]);
+                      return _PriceCard(l10n: l10n, item: filtered[index]);
                     },
                   ),
                 );
@@ -111,7 +116,11 @@ class _MarketScreenState extends State<MarketScreen> {
     );
   }
 
-  Widget _buildHeader(bool isDark) {
+  Widget _buildHeader(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isDark,
+  ) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -137,7 +146,7 @@ class _MarketScreenState extends State<MarketScreen> {
           controller: _searchController,
           onChanged: (value) => setState(() => _searchQuery = value),
           decoration: InputDecoration(
-            hintText: 'එළවළුවක් සොයන්න...',
+            hintText: l10n.marketSearchHint,
             prefixIcon: const Icon(Icons.search, color: Colors.green),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
@@ -193,7 +202,7 @@ class _MarketScreenState extends State<MarketScreen> {
     );
   }
 
-  Widget _buildMarketStatus() {
+  Widget _buildMarketStatus(AppLocalizations l10n) {
     final lastUpdated = _marketRepository.lastUpdatedForMarket(_selectedMarket);
     final isStale = _marketRepository.isStale(_selectedMarket);
 
@@ -203,23 +212,25 @@ class _MarketScreenState extends State<MarketScreen> {
 
     if (_syncState == _MarketSyncState.syncing) {
       color = Colors.blue;
-      label = 'Syncing...';
+      label = l10n.marketStatusSyncing;
       icon = Icons.sync;
     } else if (_syncState == _MarketSyncState.failed) {
       color = lastUpdated == null ? Colors.red : Colors.orange;
-      label = lastUpdated == null ? 'Offline - no cache' : 'Offline cache';
+      label = lastUpdated == null
+          ? l10n.marketStatusOfflineNoCache
+          : l10n.marketStatusOfflineCache;
       icon = Icons.cloud_off;
     } else if (lastUpdated == null) {
       color = Colors.grey;
-      label = 'No cached data';
+      label = l10n.marketStatusNoCachedData;
       icon = Icons.inbox;
     } else if (isStale) {
       color = Colors.orange;
-      label = 'Cached - stale';
+      label = l10n.marketStatusCachedStale;
       icon = Icons.history;
     } else {
       color = Colors.green;
-      label = 'Cached - fresh';
+      label = l10n.marketStatusCachedFresh;
       icon = Icons.check_circle;
     }
 
@@ -231,7 +242,7 @@ class _MarketScreenState extends State<MarketScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$_selectedMarket වෙළඳපොළ',
+              l10n.marketHeaderForMarket(_selectedMarket),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
@@ -277,11 +288,13 @@ class _MarketScreenState extends State<MarketScreen> {
 }
 
 class _EmptyMarketState extends StatelessWidget {
+  final AppLocalizations l10n;
   final bool hasCachedData;
   final bool isSyncing;
   final VoidCallback onRetry;
 
   const _EmptyMarketState({
+    required this.l10n,
     required this.hasCachedData,
     required this.isSyncing,
     required this.onRetry,
@@ -299,8 +312,8 @@ class _EmptyMarketState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               hasCachedData
-                  ? 'සෙවුමට ගැළපෙන ප්‍රතිඵල නැත.'
-                  : 'තවම මිල දත්ත නොමැත.',
+                  ? l10n.marketEmptyNoSearchResults
+                  : l10n.marketEmptyNoDataYet,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 16),
             ),
@@ -311,7 +324,7 @@ class _EmptyMarketState extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Sync prices'),
+                label: Text(l10n.marketSyncPrices),
               ),
           ],
         ),
@@ -321,9 +334,10 @@ class _EmptyMarketState extends StatelessWidget {
 }
 
 class _PriceCard extends StatelessWidget {
+  final AppLocalizations l10n;
   final CachedMarketPrice item;
 
-  const _PriceCard({required this.item});
+  const _PriceCard({required this.l10n, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -348,8 +362,8 @@ class _PriceCard extends StatelessWidget {
               child: Center(
                 child: Text(
                   item.cropNameSinhala.isNotEmpty
-                      ? item.cropNameSinhala[0]
-                      : '?',
+                      ? item.cropNameSinhala.characters.first
+                      : l10n.marketCropInitialFallback,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -377,7 +391,7 @@ class _PriceCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Updated ${_formatDate(item.updatedAt)}',
+                    l10n.marketUpdatedOn(_formatDate(item.updatedAt)),
                     style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
                 ],
@@ -387,7 +401,7 @@ class _PriceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'රු. ${item.price.toStringAsFixed(0)}',
+                  l10n.marketPriceRupee(item.price.toStringAsFixed(0)),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -395,7 +409,7 @@ class _PriceCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '/${item.unit}',
+                  l10n.marketUnitSlash(item.unit),
                   style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
               ],

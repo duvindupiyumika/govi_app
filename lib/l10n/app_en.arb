@@ -1,0 +1,172 @@
+{
+  "@@locale": "en",
+  "appTitle": "GOVI",
+  "startupFirebaseError": "GOVI could not connect to Firebase. Please check configuration and try again.",
+  "navHome": "Home",
+  "navTrack": "Track",
+  "navAi": "AI",
+  "navMarket": "Market",
+  "navLearn": "Learn",
+  "navProfile": "Profile",
+  "back": "Back",
+  "next": "Next",
+  "finishSetup": "Finish setup",
+  "skip": "Skip",
+  "welcomeTitle": "Welcome to GOVI",
+  "welcomeSubtitle": "Let us set up farming guidance in your language.",
+  "chooseLanguage": "Choose your language",
+  "farmerTypeTitle": "What best describes your farming?",
+  "farmerTypeSubtitle": "This helps GOVI adjust guidance for you.",
+  "farmerFirstTime": "First-time farmer",
+  "farmerSmallScale": "Home garden / small scale",
+  "farmerCommercial": "Commercial farmer",
+  "locationTitle": "Where is your farm?",
+  "locationSubtitle": "Location helps weather, soil, and AI guidance.",
+  "useGpsLocation": "Use current GPS location",
+  "manualLocation": "Or enter nearest town",
+  "landSize": "Land size",
+  "cropTitle": "Know what you are planting?",
+  "cropSubtitle": "Optional. You can add crops later from Home.",
+  "currentCrop": "Current crop",
+  "previousCrop": "Previous crop",
+  "startDate": "Start date",
+  "pickDate": "Pick date",
+  "marketTitle": "Choose markets to watch",
+  "marketSubtitle": "Optional. Market prices can be changed later.",
+  "doneTitle": "Your farm is ready",
+  "doneSubtitle": "You can now learn, track crops, and ask GOVI AI.",
+  "locationRequired": "Location is required to continue.",
+  "gpsFailed": "Could not get GPS. Enter nearest town instead.",
+  "profileTitle": "Profile",
+  "profileAccount": "Account",
+  "profileManage": "Manage Profile",
+  "profileNotifications": "Notifications",
+  "profileLanguage": "Language",
+  "profilePreferences": "Preferences",
+  "profileAbout": "About Us",
+  "profileDarkMode": "Dark Mode",
+  "profileSupport": "Support",
+  "profileHelp": "Help Center",
+  "profileEmailEmpty": "Email not set",
+  "profileLocationEmpty": "Location not set",
+  "onboardingNameTitle": "What should we call you?",
+  "onboardingNameSubtitle": "Your name shows in the app and helps GOVI feel personal.",
+  "onboardingYourName": "Your name",
+  "onboardingNameRequired": "Please enter your name to continue.",
+  "onboardingPreferencesTitle": "Your farming profile",
+  "onboardingPreferencesSubtitle": "Optional. You can change this anytime in Profile.",
+  "onboardingJourneyTitle": "Choose your journey",
+  "onboardingJourneySubtitle": "Pick the path that matches you right now. You can always change crops later.",
+  "onboardingJourneyKnownTitle": "I know what I'm planting",
+  "onboardingJourneyKnownBody": "Tell GOVI what you grow so tracking and reminders can start right away.",
+  "onboardingJourneyHelpTitle": "Help me decide what to plant",
+  "onboardingJourneyHelpBody": "Skip crop details for now — GOVI AI can recommend crops using your farm location and land size.",
+  "onboardingJourneyRequired": "Please choose how you want to get started.",
+  "onboardingCompleteTitle": "You're ready to grow",
+  "onboardingCompleteSubtitle": "Your farm basics are saved. Tap below to enter GOVI.",
+  "onboardingEnterApp": "Enter GOVI",
+  "landUnitAcres": "Acres",
+  "landUnitPerches": "Perches",
+  "languageRegionLk": "Sri Lanka",
+  "languageRegionIntl": "International",
+  "homeGreetingMorning": "Good morning",
+  "homeGreetingAfternoon": "Good afternoon",
+  "homeGreetingEvening": "Good evening",
+  "homeQuickActions": "Quick Actions",
+  "homeQuickActionAddCrop": "Add Crop",
+  "homeQuickActionAskAi": "Ask GOVI AI",
+  "homeQuickActionMarketPrices": "Market Prices",
+  "homeQuickActionLearn": "Learn",
+  "homeRecentActivities": "Recent Activities",
+  "homeNoRecentActivityYet": "No recent activity yet.",
+  "homeEmptyCropTitle": "Start tracking your first crop",
+  "homeEmptyCropDescription": "Add a crop when you are ready. GOVI will create a harvest progress tracker and timeline tasks.",
+  "homeEmptyAddCropCta": "Add Crop",
+  "homeHarvestOn": "Harvest {date}",
+  "@homeHarvestOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "homeAllTasksDone": "All tasks done",
+  "homeNextTask": "Next: {taskTitle}",
+  "@homeNextTask": {
+    "placeholders": {
+      "taskTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRelativeDaysAgo": "{count} days ago",
+  "@homeRelativeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeRelativeHoursAgo": "{count} hours ago",
+  "@homeRelativeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeRelativeMinutesAgo": "{count} minutes ago",
+  "@homeRelativeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeJustNow": "Just now",
+  "marketScreenTitle": "Market prices",
+  "marketRefreshTooltip": "Refresh",
+  "marketSearchHint": "Search vegetables…",
+  "marketHeaderForMarket": "{marketName} market",
+  "@marketHeaderForMarket": {
+    "placeholders": {
+      "marketName": {
+        "type": "String"
+      }
+    }
+  },
+  "marketStatusSyncing": "Syncing…",
+  "marketStatusOfflineNoCache": "Offline – no cache",
+  "marketStatusOfflineCache": "Offline cache",
+  "marketStatusNoCachedData": "No cached data",
+  "marketStatusCachedStale": "Cached – stale",
+  "marketStatusCachedFresh": "Cached – fresh",
+  "marketEmptyNoSearchResults": "No matching search results.",
+  "marketEmptyNoDataYet": "No price data yet.",
+  "marketSyncPrices": "Sync prices",
+  "marketPriceRupee": "Rs. {price}",
+  "@marketPriceRupee": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "marketUpdatedOn": "Updated {date}",
+  "@marketUpdatedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "marketUnitSlash": "/{unit}",
+  "@marketUnitSlash": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "marketCropInitialFallback": "?"
+}

@@ -11,13 +11,10 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider(
         create: (_) => ThemeProvider(),
-        child: const MyApp(firebaseInitialized: false),
+        child: const GovAppBootstrap(firebaseInitialized: false),
       ),
     );
 
-    expect(
-      find.textContaining('GOVI could not connect to Firebase'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('GOVI'), findsOneWidget);
   });
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/profile/domain/local_profile.dart';
+import '../../l10n/app_localizations_context.dart';
 import 'help_center_screen.dart';
 import 'manage_profile_screen.dart';
 import 'notification_screen.dart';
@@ -12,63 +13,17 @@ import 'theme_provider.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  static const Map<String, Map<String, String>> _localizedText = {
-    'en': {
-      'title': 'Profile',
-      'account': 'Account',
-      'manage': 'Manage Profile',
-      'notif': 'Notifications',
-      'lang': 'Language',
-      'pref': 'Preferences',
-      'about': 'About Us',
-      'theme': 'Dark Mode',
-      'support': 'Support',
-      'help': 'Help Center',
-      'email_empty': 'Email not set',
-      'location_empty': 'Location not set',
-    },
-    'si': {
-      'title': 'පැතිකඩ',
-      'account': 'ගිණුම',
-      'manage': 'පැතිකඩ කළමනාකරණය',
-      'notif': 'දැනුම්දීම්',
-      'lang': 'භාෂාව',
-      'pref': 'මනාප',
-      'about': 'අපි ගැන',
-      'theme': 'අඳුරු මාදිලිය',
-      'support': 'සහාය',
-      'help': 'උදවු මධ්‍යස්ථානය',
-      'email_empty': 'ඊමේල් සකසා නැත',
-      'location_empty': 'ප්‍රදේශය සකසා නැත',
-    },
-    'ta': {
-      'title': 'சுயவிவரம்',
-      'account': 'கணக்கு',
-      'manage': 'சுயவிவரத்தை நிர்வகி',
-      'notif': 'அறிவிப்புகள்',
-      'lang': 'மொழி',
-      'pref': 'விருப்பத்தேர்வுகள்',
-      'about': 'எங்களைப் பற்றி',
-      'theme': 'இருண்ட முறை',
-      'support': 'ஆதரவு',
-      'help': 'உதவி மையம்',
-      'email_empty': 'மின்னஞ்சல் அமைக்கப்படவில்லை',
-      'location_empty': 'இடம் அமைக்கப்படவில்லை',
-    },
-  };
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     final profile = themeProvider.profile;
-    final t =
-        _localizedText[themeProvider.languageCode] ?? _localizedText['si']!;
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          t['title']!,
+          l10n.profileTitle,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
@@ -80,10 +35,10 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProfileHeader(context, profile, t),
+            _buildProfileHeader(context, profile),
             const SizedBox(height: 25),
             Text(
-              t['account']!,
+              l10n.profileAccount,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -94,7 +49,7 @@ class ProfileScreen extends StatelessWidget {
             _buildSectionBox(context, [
               _buildMenuItem(
                 Icons.person_outline,
-                t['manage']!,
+                l10n.profileManage,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -107,7 +62,7 @@ class ProfileScreen extends StatelessWidget {
               _buildDivider(),
               _buildMenuItem(
                 Icons.notifications_none,
-                t['notif']!,
+                l10n.profileNotifications,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -120,14 +75,14 @@ class ProfileScreen extends StatelessWidget {
               _buildDivider(),
               _buildMenuItem(
                 Icons.language,
-                t['lang']!,
+                l10n.profileLanguage,
                 trailingText: themeProvider.languageName,
                 onTap: () => _showLanguageDialog(context),
               ),
             ]),
             const SizedBox(height: 20),
             Text(
-              t['pref']!,
+              l10n.profilePreferences,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -136,11 +91,11 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _buildSectionBox(context, [
-              _buildMenuItem(Icons.info_outline, t['about']!),
+              _buildMenuItem(Icons.info_outline, l10n.profileAbout),
               _buildDivider(),
               _buildMenuItem(
                 Icons.palette_outlined,
-                t['theme']!,
+                l10n.profileDarkMode,
                 trailing: Switch(
                   value: themeProvider.isDarkMode,
                   activeThumbColor: Colors.green,
@@ -150,7 +105,7 @@ class ProfileScreen extends StatelessWidget {
             ]),
             const SizedBox(height: 20),
             Text(
-              t['support']!,
+              l10n.profileSupport,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -161,7 +116,7 @@ class ProfileScreen extends StatelessWidget {
             _buildSectionBox(context, [
               _buildMenuItem(
                 Icons.help_outline,
-                t['help']!,
+                l10n.profileHelp,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -178,12 +133,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(
-    BuildContext context,
-    LocalProfile profile,
-    Map<String, String> t,
-  ) {
+  Widget _buildProfileHeader(BuildContext context, LocalProfile profile) {
     final imageProvider = _profileImageProvider(profile.profileImagePath);
+    final l10n = context.l10n;
 
     return Container(
       padding: const EdgeInsets.all(15),
@@ -219,14 +171,14 @@ class ProfileScreen extends StatelessWidget {
                 Text(
                   profile.email?.isNotEmpty == true
                       ? profile.email!
-                      : t['email_empty']!,
+                      : l10n.profileEmailEmpty,
                   style: const TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   profile.location?.isNotEmpty == true
                       ? profile.location!
-                      : t['location_empty']!,
+                      : l10n.profileLocationEmpty,
                   style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
