@@ -5,6 +5,7 @@ class LocalProfile {
   final String? phoneNumber;
   final String? location;
   final double? landSize;
+  final String? farmerType;
   final String languageCode;
   final String themeMode;
   final String? profileImagePath;
@@ -17,6 +18,7 @@ class LocalProfile {
     this.phoneNumber,
     this.location,
     this.landSize,
+    this.farmerType,
     this.languageCode = 'si',
     this.themeMode = 'light',
     this.profileImagePath,
@@ -41,6 +43,7 @@ class LocalProfile {
       phoneNumber: json['phoneNumber'] as String?,
       location: json['location'] as String?,
       landSize: (json['landSize'] as num?)?.toDouble(),
+      farmerType: json['farmerType'] as String?,
       languageCode: json['languageCode'] as String? ?? 'si',
       themeMode: json['themeMode'] as String? ?? 'light',
       profileImagePath: json['profileImagePath'] as String?,
@@ -56,6 +59,7 @@ class LocalProfile {
       'phoneNumber': phoneNumber,
       'location': location,
       'landSize': landSize,
+      'farmerType': farmerType,
       'languageCode': languageCode,
       'themeMode': themeMode,
       'profileImagePath': profileImagePath,
@@ -69,6 +73,7 @@ class LocalProfile {
     String? phoneNumber,
     String? location,
     double? landSize,
+    String? farmerType,
     String? languageCode,
     String? themeMode,
     String? profileImagePath,
@@ -81,6 +86,7 @@ class LocalProfile {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       location: location ?? this.location,
       landSize: landSize ?? this.landSize,
+      farmerType: farmerType ?? this.farmerType,
       languageCode: languageCode ?? this.languageCode,
       themeMode: themeMode ?? this.themeMode,
       profileImagePath: profileImagePath ?? this.profileImagePath,

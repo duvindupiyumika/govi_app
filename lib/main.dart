@@ -10,6 +10,7 @@ import 'screens/tracking/tracking_screen.dart';
 import 'screens/ai_suggestions/ai_suggestions_screen.dart';
 import 'screens/market/market_screen.dart';
 import 'screens/knowledge/knowledge_screen.dart';
+import 'screens/onboarding/onboarding_flow_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/select_veg/select_veg_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
@@ -68,7 +69,9 @@ class MyApp extends StatelessWidget {
       theme: MyThemes.lightTheme,
       darkTheme: MyThemes.darkTheme,
       home: firebaseInitialized
-          ? const MainScreen()
+          ? (themeProvider.onboardingComplete
+                ? const MainScreen()
+                : const OnboardingFlowScreen())
           : const StartupErrorScreen(),
     );
   }

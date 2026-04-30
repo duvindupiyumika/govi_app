@@ -85,6 +85,7 @@ class ThemeProvider extends ChangeNotifier {
     String? phoneNumber,
     String? location,
     double? landSize,
+    String? farmerType,
     String? profileImagePath,
   }) async {
     _profile = LocalProfile(
@@ -94,6 +95,7 @@ class ThemeProvider extends ChangeNotifier {
       phoneNumber: phoneNumber,
       location: location,
       landSize: landSize,
+      farmerType: farmerType ?? _profile.farmerType,
       languageCode: languageCode,
       themeMode: _settings.themeMode,
       profileImagePath: profileImagePath,
