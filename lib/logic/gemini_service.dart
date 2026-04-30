@@ -6,23 +6,39 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class GeminiService {
   static final String _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
 
-  Future<String> _getAiResponse(String prompt, {Uint8List? imageBytes}) async {
+  Future<String> _getAiResponse(String prompt, {Uint8List? imageBytes, String? systemPrompt}) async {
     List<Map<String, String>> attempts = [
-      {'ver': 'v1beta', 'mod': 'gemini-1.5-flash'},
-      {'ver': 'v1', 'mod': 'gemini-pro'},
+      {'ver': 'v1beta', 'mod': 'gemini-3.1-flash-live-preview'},
+      {'ver': 'v1beta', 'mod': 'gemini-3.1-pro-preview'},
+      {'ver': 'v1beta', 'mod': 'gemini-3-flash-preview'},
+      {'ver': 'v1beta', 'mod': 'gemini-2.5-pro'},
     ];
 
     for (var attempt in attempts) {
-      final url = 'https://generativelanguage.googleapis.com/${attempt['ver']}/models/${attempt['mod']}:generateContent?key=$_apiKey';
+      final url = 'https://generativelanguage.googleapis.com/${attempt['ver']}/models/${attempt['mod']}:generateContent';
       try {
         final List<Map<String, dynamic>> parts = [{"text": prompt}];
         if (imageBytes != null) {
           parts.add({"inline_data": {"mime_type": "image/jpeg", "data": base64Encode(imageBytes)}});
         }
+
+        final Map<String, dynamic> requestBody = {
+          "contents": [{"parts": parts}]
+        };
+
+        if (systemPrompt != null && systemPrompt.isNotEmpty) {
+          requestBody["system_instruction"] = {
+            "parts": [{"text": systemPrompt}]
+          };
+        }
+
         final response = await http.post(
           Uri.parse(url),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({"contents": [{"parts": parts}]}),
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': _apiKey
+          },
+          body: jsonEncode(requestBody),
         ).timeout(const Duration(seconds: 20));
 
         if (response.statusCode == 200) {
