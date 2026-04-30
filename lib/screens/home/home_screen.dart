@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // 🔥 Firebase සඳහා
+import 'package:provider/provider.dart';
 
-class HomeScreen extends StatefulWidget {
+import '../../features/tracking/data/crop_activity_repository.dart';
+import '../../features/tracking/data/crop_plan_repository.dart';
+import '../../features/tracking/data/crop_task_repository.dart';
+import '../../features/tracking/domain/crop_activity.dart';
+import '../../features/tracking/domain/crop_lifecycle_service.dart';
+import '../../features/tracking/domain/crop_plan.dart';
+import '../../features/tracking/domain/crop_task.dart';
+import '../profile/theme_provider.dart';
+import '../tracking/add_crop_screen.dart';
+import '../tracking/crop_detail_screen.dart';
+
+class HomeScreen extends StatelessWidget {
   final Function(int) onNavigate;
   final Function(String) onPushRoute;
 
@@ -12,490 +23,205 @@ class HomeScreen extends StatefulWidget {
   });
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  final PageController _pageController = PageController();
-  int _currentCarouselIndex = 0;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-
-  final String farmerName = "Kamal";
-
-  final List<Map<String, String>> carouselItems = const [
-    {
-      'image': 'assets/images/farming1.jpg',
-      'title': 'Modern Farming',
-      'subtitle': 'Smart Agriculture Techniques',
-    },
-    {
-      'image': 'assets/images/farming2.jpg',
-      'title': 'High Yield Harvest',
-      'subtitle': 'Get maximum production',
-    },
-    {
-      'image': 'assets/images/farming3.jpg',
-      'title': 'AI Assistant',
-      'subtitle': '24/7 farming guidance',
-    },
-  ];
-
-  final List<Map<String, dynamic>> quickActions = [
-    {
-      'icon': Icons.eco,
-      'title': 'My Crops',
-      'color': Colors.green,
-      'count': '3 Active',
-      'navIndex': 1,
-    },
-    {
-      'icon': Icons.analytics,
-      'title': 'AI Suggestions',
-      'color': Colors.orange,
-      'count': '2 New',
-      'navIndex': 2,
-    },
-    {
-      'icon': Icons.attach_money,
-      'title': 'Market Prices',
-      'color': Colors.blue,
-      'count': 'Updated',
-      'navIndex': 3,
-    },
-    {
-      'icon': Icons.health_and_safety,
-      'title': 'Disease Alerts',
-      'color': Colors.red,
-      'count': '1 Alert',
-      'navIndex': 4,
-    },
-  ];
-
-  final List<Map<String, String>> dailyTips = const [
-    {
-      'title': 'Fertilizer Reminder',
-      'tip': 'Today is the best day to apply NPK fertilizer for your brinjal crops!',
-      'icon': '🌱',
-    },
-    {
-      'title': 'Weather Update',
-      'tip': 'Light rain expected tomorrow. Perfect for planting new seeds.',
-      'icon': '☔',
-    },
-    {
-      'title': 'Market Alert',
-      'tip': 'Chilli prices are going up. Consider harvesting soon!',
-      'icon': '📈',
-    },
-  ];
-
-  int _currentTipIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _startCarouselAutoSlide();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
-    );
-    _animationController.forward();
-    _startTipRotation();
-  }
-
-  void _startCarouselAutoSlide() {
-    Future.delayed(const Duration(seconds: 3), () {
-      if (!mounted) return;
-      setState(() {
-        _currentCarouselIndex = (_currentCarouselIndex + 1) % carouselItems.length;
-      });
-      _pageController.animateToPage(
-        _currentCarouselIndex,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-      _startCarouselAutoSlide();
-    });
-  }
-
-  void _startTipRotation() {
-    Future.delayed(const Duration(seconds: 5), () {
-      if (!mounted) return;
-      setState(() {
-        _currentTipIndex = (_currentTipIndex + 1) % dailyTips.length;
-      });
-      _startTipRotation();
-    });
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _onNotificationPressed() {
-    // Notification Screen එකට navigate කිරීම
-    widget.onNavigate(5);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final profile = context.watch<ThemeProvider>().profile;
+    final planRepository = CropPlanRepository();
+    final activityRepository = CropActivityRepository();
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor, // 🔥 Adaptive Background
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              floating: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              toolbarHeight: 70,
-              flexibleSpace: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance.collection('farmers').limit(1).snapshots(),
-                        builder: (context, snapshot) {
-                          String name = farmerName;
-                          if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                            name = snapshot.data!.docs.first['full_name'].split(' ')[0];
-                          }
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "Welcome back,",
-                                style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : Colors.grey[600]),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                "$name! 👋",
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.greenAccent : const Color(0xFF2E7D32),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: _onNotificationPressed,
-                          child: Stack(
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.notifications_outlined, size: 28, color: theme.colorScheme.onSurface),
-                                onPressed: _onNotificationPressed,
-                              ),
-                              Positioned(
-                                right: 8,
-                                top: 8,
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 16,
-                                    minHeight: 16,
-                                  ),
-                                  child: const Text(
-                                    '3',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () => widget.onNavigate(5),
-                          child: Container(
-                            width: 45,
-                            height: 45,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: isDark ? Colors.grey[800]! : Colors.white, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.green.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'K',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              sliver: SliverToBoxAdapter(
-                child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface, // 🔥 Adaptive Search Bar
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+        child: StreamBuilder<List<CropPlan>>(
+          stream: planRepository.watchAll(),
+          builder: (context, snapshot) {
+            final plans = snapshot.data ?? planRepository.getAll();
+            plans.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                    child: _buildHeader(context, profile.name),
                   ),
-                  child: TextField(
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                    decoration: InputDecoration(
-                      hintText: 'Search vegetables, diseases...',
-                      hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.grey),
-                      prefixIcon: const Icon(Icons.search, color: Color(0xFF2E7D32)),
-                      suffixIcon: const Icon(Icons.mic, color: Color(0xFF2E7D32)),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: plans.isEmpty
+                        ? _buildEmptyCropCard(context)
+                        : _ActiveCropCarousel(plans: plans),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                    child: Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 200,
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (index) {
-                    setState(() => _currentCarouselIndex = index);
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 1.35,
+                          crossAxisSpacing: 14,
+                          mainAxisSpacing: 14,
+                        ),
+                    delegate: SliverChildListDelegate([
+                      _QuickActionCard(
+                        icon: Icons.add_circle_outline,
+                        title: 'Add Crop',
+                        color: Colors.green,
+                        onTap: () => _openAddCrop(context),
+                      ),
+                      _QuickActionCard(
+                        icon: Icons.psychology,
+                        title: 'Ask GOVI AI',
+                        color: Colors.teal,
+                        onTap: () => onNavigate(2),
+                      ),
+                      _QuickActionCard(
+                        icon: Icons.storefront,
+                        title: 'Market Prices',
+                        color: Colors.blue,
+                        onTap: () => onNavigate(3),
+                      ),
+                      _QuickActionCard(
+                        icon: Icons.menu_book,
+                        title: 'Learn',
+                        color: Colors.orange,
+                        onTap: () => onNavigate(4),
+                      ),
+                    ]),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                    child: Text(
+                      'Recent Activities',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ),
+                StreamBuilder<List<CropActivity>>(
+                  stream: activityRepository.watchAll(),
+                  builder: (context, activitySnapshot) {
+                    final activities =
+                        activitySnapshot.data ?? activityRepository.getAll();
+                    activities.sort(
+                      (a, b) => b.createdAt.compareTo(a.createdAt),
+                    );
+                    final visible = activities.take(5).toList();
+
+                    if (visible.isEmpty) {
+                      return const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: Text('No recent activity yet.'),
+                        ),
+                      );
+                    }
+
+                    return SliverList.builder(
+                      itemCount: visible.length,
+                      itemBuilder: (context, index) {
+                        final activity = visible[index];
+                        return ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Color(0xFFE8F5E9),
+                            child: Icon(Icons.check, color: Colors.green),
+                          ),
+                          title: Text(activity.title),
+                          subtitle: Text(_relativeDate(activity.createdAt)),
+                        );
+                      },
+                    );
                   },
-                  itemCount: carouselItems.length,
-                  itemBuilder: (context, index) => _buildCarouselItem(
-                    carouselItems[index]['image']!,
-                    carouselItems[index]['title']!,
-                    carouselItems[index]['subtitle']!,
-                  ),
                 ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  carouselItems.length,
-                      (index) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _currentCarouselIndex == index
-                          ? const Color(0xFF2E7D32)
-                          : Colors.grey.withOpacity(0.3),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                child: _buildVegetableSelectionPrompt(context),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Text(
-                  'Quick Actions',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.1,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildQuickActionCard(
-                    icon: quickActions[index]['icon'],
-                    title: quickActions[index]['title'],
-                    color: quickActions[index]['color'],
-                    count: quickActions[index]['count'],
-                    onTap: () {
-                      widget.onNavigate(quickActions[index]['navIndex']);
-                    },
-                    context: context,
-                  ),
-                  childCount: quickActions.length,
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                child: Text(
-                  "Today's Tip",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  child: _buildTipCard(dailyTips[_currentTipIndex]),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                child: Text(
-                  'Recent Activities',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                ),
-              ),
-            ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  final activities = const [
-                    {'title': 'Brinjal planted', 'date': '2 hours ago', 'icon': Icons.eco},
-                    {'title': 'Fertilizer applied', 'date': 'Yesterday', 'icon': Icons.spa},
-                    {'title': 'Harvested 50kg Chilli', 'date': '2 days ago', 'icon': Icons.shopping_bag},
-                  ];
-                  return _buildActivityItem(activities[index], context);
-                },
-                childCount: 3,
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 20)),
-          ],
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildVegetableSelectionPrompt(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildHeader(BuildContext context, String farmerName) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _greeting(),
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                farmerName,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E7D32),
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          onPressed: () => onNavigate(5),
+          icon: const Icon(Icons.person_outline),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyCropCard(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark
-              ? [const Color(0xFF1E1E1F), const Color(0xFF2A2A2B)]
-              : [Colors.green[50]!, Colors.lightGreen[50]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          colors: [Colors.green[50]!, Colors.lightGreen[50]!],
         ),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: isDark ? Colors.green.withOpacity(0.3) : Colors.green.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.green.shade100),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2E7D32),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.lightbulb, color: Colors.white, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  "Select the best vegetable for maximum profit!",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.greenAccent : Colors.green[800],
-                  ),
-                ),
-              ),
-            ],
+          const Icon(Icons.eco, color: Color(0xFF2E7D32), size: 42),
+          const SizedBox(height: 14),
+          const Text(
+            'Start tracking your first crop',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 12),
-          Text(
-            "Through this, farmers can select the most suitable vegetable to cultivate. It helps you choose the vegetable that gives the best profit by analyzing market demand, climate suitability, and expected yield.",
-            style: TextStyle(fontSize: 14, color: isDark ? Colors.white60 : Colors.grey[700], height: 1.4),
+          const SizedBox(height: 8),
+          const Text(
+            'Add a crop when you are ready. GOVI will create a harvest progress tracker and timeline tasks.',
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => widget.onPushRoute('/select_veg'),
-              icon: const Icon(Icons.play_arrow, color: Colors.white),
-              label: const Text(
-                "Select Vegetable Now",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E7D32),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 5,
-              ),
+          ElevatedButton.icon(
+            onPressed: () => _openAddCrop(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Add Crop'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E7D32),
+              foregroundColor: Colors.white,
             ),
           ),
         ],
@@ -503,202 +229,189 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCarouselItem(String imagePath, String title, String subtitle) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        color: Colors.grey[800],
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+  void _openAddCrop(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddCropScreen()),
+    );
+  }
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'සුභ උදෑසනක්';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  String _relativeDate(DateTime date) {
+    final difference = DateTime.now().difference(date);
+    if (difference.inDays > 0) return '${difference.inDays} days ago';
+    if (difference.inHours > 0) return '${difference.inHours} hours ago';
+    if (difference.inMinutes > 0) return '${difference.inMinutes} minutes ago';
+    return 'Just now';
+  }
+}
+
+class _ActiveCropCarousel extends StatelessWidget {
+  final List<CropPlan> plans;
+
+  const _ActiveCropCarousel({required this.plans});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 230,
+      child: PageView.builder(
+        itemCount: plans.length,
+        controller: PageController(viewportFraction: 0.92),
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: _ActiveCropCard(plan: plans[index]),
+          );
+        },
       ),
+    );
+  }
+}
+
+class _ActiveCropCard extends StatelessWidget {
+  final CropPlan plan;
+
+  const _ActiveCropCard({required this.plan});
+
+  @override
+  Widget build(BuildContext context) {
+    final lifecycleService = CropLifecycleService();
+    final taskRepository = CropTaskRepository();
+    final progress = lifecycleService.progressFor(plan, DateTime.now());
+    final percent = (progress * 100).round();
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => CropDetailScreen(plan: plan)),
+        );
+      },
       child: Container(
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [
-              Colors.black.withOpacity(0.8),
-              Colors.transparent,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
+          ),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.eco, color: Colors.white, size: 32),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    plan.cropName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                    ),
+                  ),
+                ),
+                Text(
+                  '$percent%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 12,
+                backgroundColor: Colors.white.withValues(alpha: 0.25),
+                valueColor: const AlwaysStoppedAnimation(Colors.white),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Harvest ${_formatDate(plan.expectedHarvestDate)}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const Spacer(),
+            StreamBuilder<List<CropTask>>(
+              stream: taskRepository.watchAll(),
+              builder: (context, snapshot) {
+                final tasks =
+                    (snapshot.data ?? taskRepository.getAll())
+                        .where(
+                          (task) =>
+                              task.cropPlanId == plan.id &&
+                              task.status == CropTaskStatus.pending,
+                        )
+                        .toList()
+                      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+
+                return Text(
+                  tasks.isEmpty
+                      ? 'All tasks done'
+                      : 'Next: ${tasks.first.title}',
+                  style: const TextStyle(color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 30),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
         ),
-        child: Align(
-          alignment: Alignment.bottomLeft,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionCard({
-    required IconData icon,
-    required String title,
-    required Color color,
-    required String count,
-    required VoidCallback onTap,
-    required BuildContext context,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface, // 🔥 Adaptive Card
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.grey.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 30),
-            ),
-            const SizedBox(height: 10),
-            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
-            const SizedBox(height: 5),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                count,
-                style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTipCard(Map<String, String> tip) {
-    return Container(
-      key: ValueKey(tip['title']),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(tip['icon']!, style: const TextStyle(fontSize: 30)),
-            ),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tip['title']!,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  tip['tip']!,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActivityItem(Map<String, dynamic> activity, BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.green.withOpacity(0.1) : Colors.green[50],
-              shape: BoxShape.circle,
-            ),
-            child: Icon(activity['icon'], color: Colors.green, size: 20),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  activity['title'],
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurface),
-                ),
-                Text(
-                  activity['date'],
-                  style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-          Icon(Icons.more_vert, color: isDark ? Colors.white38 : Colors.grey),
-        ],
       ),
     );
   }

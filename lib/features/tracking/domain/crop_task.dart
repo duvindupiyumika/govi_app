@@ -44,4 +44,22 @@ class CropTask {
       'updatedAt': updatedAt.toIso8601String(),
     };
   }
+
+  CropTask copyWith({
+    String? title,
+    String? description,
+    DateTime? dueDate,
+    CropTaskStatus? status,
+    DateTime? updatedAt,
+  }) {
+    return CropTask(
+      id: id,
+      cropPlanId: cropPlanId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      dueDate: dueDate ?? this.dueDate,
+      status: status ?? this.status,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

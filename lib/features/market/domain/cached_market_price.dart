@@ -1,3 +1,5 @@
+import '../../../data/models/market_price_model.dart';
+
 class CachedMarketPrice {
   final String id;
   final String market;
@@ -18,6 +20,19 @@ class CachedMarketPrice {
     required this.source,
     required this.updatedAt,
   });
+
+  factory CachedMarketPrice.fromMarketPrice(MarketPrice price) {
+    return CachedMarketPrice(
+      id: '${price.market}_${price.vegetableNameEn.toLowerCase()}',
+      market: price.market,
+      cropName: price.vegetableNameEn,
+      cropNameSinhala: price.vegetableName,
+      price: price.price,
+      unit: price.unit,
+      source: 'firebase',
+      updatedAt: price.updatedAt,
+    );
+  }
 
   factory CachedMarketPrice.fromJson(Map<String, dynamic> json) {
     return CachedMarketPrice(

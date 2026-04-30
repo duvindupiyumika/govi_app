@@ -50,4 +50,27 @@ class CropPlan {
       'updatedAt': updatedAt.toIso8601String(),
     };
   }
+
+  CropPlan copyWith({
+    String? cropName,
+    String? cropNameSinhala,
+    String? location,
+    double? landSize,
+    DateTime? startDate,
+    DateTime? expectedHarvestDate,
+    double? expectedYieldKg,
+    DateTime? updatedAt,
+  }) {
+    return CropPlan(
+      id: id,
+      cropName: cropName ?? this.cropName,
+      cropNameSinhala: cropNameSinhala ?? this.cropNameSinhala,
+      location: location ?? this.location,
+      landSize: landSize ?? this.landSize,
+      startDate: startDate ?? this.startDate,
+      expectedHarvestDate: expectedHarvestDate ?? this.expectedHarvestDate,
+      expectedYieldKg: expectedYieldKg ?? this.expectedYieldKg,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

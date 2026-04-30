@@ -6,6 +6,7 @@ class HiveBoxNames {
   static const onboarding = 'onboarding';
   static const cropPlans = 'crop_plans';
   static const cropTasks = 'crop_tasks';
+  static const cropActivities = 'crop_activities';
   static const marketPrices = 'market_prices';
   static const knowledgeGuides = 'knowledge_guides';
   static const chatMessages = 'chat_messages';
@@ -18,6 +19,7 @@ class HiveBoxNames {
     onboarding,
     cropPlans,
     cropTasks,
+    cropActivities,
     marketPrices,
     knowledgeGuides,
     chatMessages,
