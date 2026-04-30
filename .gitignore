@@ -46,4 +46,4 @@ app.*.map.json
 /android/app/release
 .env
 /market_api/node_modules/
-/market_api/serviceAccountKey.json
+#/market_api/serviceAccountKey.json
